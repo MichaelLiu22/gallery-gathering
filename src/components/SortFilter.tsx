@@ -24,7 +24,8 @@ const SortFilter = ({ sortOrder, filter, onSortChange, onFilterChange }: SortFil
           <SelectContent>
             <SelectItem value="latest">最新发布</SelectItem>
             <SelectItem value="likes">最多点赞</SelectItem>
-            <SelectItem value="views">最多浏览</SelectItem>
+            <SelectItem value="comments">最多评论</SelectItem>
+            <SelectItem value="hot">火热度</SelectItem>
           </SelectContent>
         </Select>
       </div>

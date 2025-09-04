@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { usePhotos, SortOrder, PhotoFilter, Photo } from "@/hooks/usePhotos";
+import { usePhotos, SortOrder, PhotoFilter, Photo, calculateHotness } from "@/hooks/usePhotos";
 import { useFriends } from "@/hooks/useFriends";
 import { useProfile } from "@/hooks/useProfiles";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Eye, Camera, User, Upload, LogOut, LogIn } from "lucide-react";
+import { Heart, MessageCircle, Eye, Camera, User, Upload, LogOut, LogIn, Flame } from "lucide-react";
 import UploadPhotoDialog from "./UploadPhotoDialog";
 import PhotoComments from "./PhotoComments";
 import SortFilter from "./SortFilter";
@@ -370,8 +370,12 @@ function PhotoCard({ photo, onClick }: PhotoCardProps) {
                 <span>{photo.likes_count}</span>
               </div>
               <div className="flex items-center space-x-1">
-                <Eye className="h-4 w-4" />
-                <span>{photo.views_count}</span>
+                <MessageCircle className="h-4 w-4" />
+                <span>{photo.comments_count || 0}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Flame className="h-4 w-4" />
+                <span>{Math.round(calculateHotness(photo))}</span>
               </div>
             </div>
             {photo.camera_equipment && (

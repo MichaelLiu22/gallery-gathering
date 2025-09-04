@@ -10,6 +10,7 @@ export interface Photo {
   exposure_settings: any;
   likes_count: number;
   views_count: number;
+  comments_count?: number;
   created_at: string;
   photographer_id: string;
   visibility: 'public' | 'friends' | 'private';
@@ -19,8 +20,15 @@ export interface Photo {
   } | null;
 }
 
-export type SortOrder = 'latest' | 'likes' | 'views';
+export type SortOrder = 'latest' | 'likes' | 'comments' | 'hot';
 export type PhotoFilter = 'all' | 'friends' | 'mine';
+
+// 火热度计算函数 - 空实现，等待用户提供算法
+export const calculateHotness = (photo: Photo): number => {
+  // TODO: 用户会提供火热度计算的分段函数
+  // 暂时返回一个基础的计算值
+  return photo.likes_count * 2 + photo.views_count * 0.1;
+};
 
 export const usePhotos = (sortOrder: SortOrder = 'latest', filter: PhotoFilter = 'all') => {
   return useQuery({
@@ -36,13 +44,10 @@ export const usePhotos = (sortOrder: SortOrder = 'latest', filter: PhotoFilter =
           )
         `);
 
-      // Apply sorting
+      // Apply initial sorting (except for comments and hot which need post-processing)
       switch (sortOrder) {
         case 'likes':
           query = query.order('likes_count', { ascending: false });
-          break;
-        case 'views':
-          query = query.order('views_count', { ascending: false });
           break;
         case 'latest':
         default:
@@ -56,7 +61,39 @@ export const usePhotos = (sortOrder: SortOrder = 'latest', filter: PhotoFilter =
         throw error;
       }
 
-      return data as Photo[];
+      let processedData = data as Photo[];
+
+      // Get comments count for all photos
+      const photosWithComments = await Promise.all(
+        processedData.map(async (photo) => {
+          const { count } = await supabase
+            .from('photo_comments')
+            .select('*', { count: 'exact', head: true })
+            .eq('photo_id', photo.id);
+          
+          return {
+            ...photo,
+            comments_count: count || 0
+          };
+        })
+      );
+
+      processedData = photosWithComments;
+      
+      // Apply sorting that requires post-processing
+      if (sortOrder === 'comments') {
+        processedData = processedData.sort((a, b) => (b.comments_count || 0) - (a.comments_count || 0));
+      } else if (sortOrder === 'hot') {
+        // 计算火热度并排序
+        processedData = processedData
+          .map(photo => ({
+            ...photo,
+            hotness: calculateHotness(photo)
+          }))
+          .sort((a, b) => (b.hotness || 0) - (a.hotness || 0));
+      }
+
+      return processedData;
     },
   });
 };
