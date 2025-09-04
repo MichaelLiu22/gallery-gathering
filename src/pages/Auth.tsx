@@ -89,18 +89,45 @@ export default function Auth() {
         : await signUp(email, password);
 
       if (error) {
-        toast({
-          title: "错误",
-          description: error.message,
-          variant: "destructive",
-        });
+        // 处理特殊的注册错误
+        if (!isLogin && error.message.includes('User already registered')) {
+          toast({
+            title: "用户已存在",
+            description: "该邮箱已注册，请检查邮箱确认链接或直接登录",
+            variant: "destructive",
+          });
+          // 自动切换到登录模式
+          setTimeout(() => setIsLogin(true), 2000);
+        } else if (!isLogin && error.message.includes('Email not confirmed')) {
+          toast({
+            title: "请确认邮箱",
+            description: "请检查您的邮箱并点击确认链接完成注册",
+          });
+        } else {
+          let errorMessage = error.message;
+          
+          // 处理常见错误信息的中文翻译
+          if (errorMessage.includes('Invalid login credentials')) {
+            errorMessage = "邮箱或密码错误，请检查后重试";
+          } else if (errorMessage.includes('Email not confirmed')) {
+            errorMessage = "邮箱未确认，请检查您的邮箱并点击确认链接";
+          } else if (errorMessage.includes('Password should be at least')) {
+            errorMessage = "密码至少需要6个字符";
+          }
+          
+          toast({
+            title: "错误",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
       } else {
         if (isLogin) {
           toast({
             title: "登录成功！",
             description: "欢迎回来",
           });
-          navigate('/');
+          // 登录成功后会通过useEffect中的checkUserProfile处理跳转
         } else {
           toast({
             title: "注册邮件已发送！",
