@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/card';
 import { Camera, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -49,6 +48,7 @@ export default function Auth() {
         }
       }
     } catch (error) {
+      console.error('Auth error:', error);
       toast({
         title: "错误",
         description: "操作失败，请稍后重试",
