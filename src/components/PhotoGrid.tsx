@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Heart, Eye, Upload, LogOut, LogIn, User } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Camera, Heart, Eye, Upload, LogOut, LogIn, User, MessageCircle } from 'lucide-react';
 import { usePhotos, Photo } from '@/hooks/usePhotos';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfiles';
+import { useLikes } from '@/hooks/useLikes';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import UploadPhotoDialog from './UploadPhotoDialog';
+import PhotoComments from './PhotoComments';
 
 export default function PhotoGrid() {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
@@ -151,46 +154,11 @@ export default function PhotoGrid() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {photos.map((photo) => (
-              <div
-                key={photo.id}
-                className="group cursor-pointer"
-                onClick={() => setSelectedPhoto(photo)}
-              >
-                <div className="bg-card rounded-lg overflow-hidden transition-all duration-300 hover:shadow-glow hover:scale-[1.02]">
-                  <div className="relative aspect-square overflow-hidden">
-                    <img
-                      src={photo.image_url}
-                      alt={photo.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <h3 className="text-white font-semibold text-lg mb-1">{photo.title}</h3>
-                        <p className="text-white/80 text-sm">
-                          {photo.profiles?.display_name || '匿名摄影师'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-1">
-                          <Heart className="h-4 w-4" />
-                          <span>{photo.likes_count}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Eye className="h-4 w-4" />
-                          <span>{photo.views_count}</span>
-                        </div>
-                      </div>
-                      <Badge variant="secondary">
-                        {photo.camera_equipment || '未知设备'}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <PhotoCard 
+                key={photo.id} 
+                photo={photo} 
+                onClick={() => setSelectedPhoto(photo)} 
+              />
             ))}
           </div>
         )}
@@ -220,8 +188,8 @@ export default function PhotoGrid() {
               </Button>
             </div>
             
-            <div className="p-6">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4">
+            <div className="p-6 space-y-6">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between">
                 <div className="mb-4 md:mb-0">
                   <h2 className="text-2xl font-bold mb-2">{selectedPhoto.title}</h2>
                   <p className="text-muted-foreground mb-4">
@@ -231,16 +199,7 @@ export default function PhotoGrid() {
                     摄影师：{selectedPhoto.profiles?.display_name || '匿名摄影师'}
                   </p>
                 </div>
-                <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-2">
-                    <Heart className="h-4 w-4" />
-                    <span>{selectedPhoto.likes_count} 赞</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Eye className="h-4 w-4" />
-                    <span>{selectedPhoto.views_count} 浏览</span>
-                  </div>
-                </div>
+                <PhotoActions photo={selectedPhoto} />
               </div>
 
               {/* Camera Settings */}
@@ -278,6 +237,11 @@ export default function PhotoGrid() {
                   })()}
                 </div>
               </div>
+
+              {/* Comments */}
+              <div className="border-t border-border pt-6">
+                <PhotoComments photoId={selectedPhoto.id} />
+              </div>
             </div>
           </div>
         </div>
@@ -287,6 +251,91 @@ export default function PhotoGrid() {
         open={uploadDialogOpen} 
         onOpenChange={setUploadDialogOpen} 
       />
+    </div>
+  );
+}
+
+// Photo Card Component
+interface PhotoCardProps {
+  photo: Photo;
+  onClick: () => void;
+}
+
+function PhotoCard({ photo, onClick }: PhotoCardProps) {
+  return (
+    <div className="group cursor-pointer" onClick={onClick}>
+      <div className="bg-card rounded-lg overflow-hidden transition-all duration-300 hover:shadow-glow hover:scale-[1.02]">
+        <div className="relative aspect-square overflow-hidden">
+          <img
+            src={photo.image_url}
+            alt={photo.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute bottom-4 left-4 right-4">
+              <h3 className="text-white font-semibold text-lg mb-1">{photo.title}</h3>
+              <p className="text-white/80 text-sm">
+                {photo.profiles?.display_name || '匿名摄影师'}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="p-4">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-1">
+                <Heart className="h-4 w-4" />
+                <span>{photo.likes_count}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Eye className="h-4 w-4" />
+                <span>{photo.views_count}</span>
+              </div>
+            </div>
+            <Badge variant="secondary">
+              {photo.camera_equipment || '未知设备'}
+            </Badge>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Photo Actions Component
+interface PhotoActionsProps {
+  photo: Photo;
+}
+
+function PhotoActions({ photo }: PhotoActionsProps) {
+  const { user } = useAuth();
+  const { likesCount, userHasLiked, toggleLike, isToggling } = useLikes(photo.id);
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) return;
+    toggleLike();
+  };
+
+  return (
+    <div className="flex items-center space-x-6 text-sm">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleLike}
+        disabled={!user || isToggling}
+        className={`flex items-center space-x-2 ${
+          userHasLiked ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground'
+        }`}
+      >
+        <Heart className={`h-4 w-4 ${userHasLiked ? 'fill-current' : ''}`} />
+        <span>{likesCount} 赞</span>
+      </Button>
+      
+      <div className="flex items-center space-x-2 text-muted-foreground">
+        <Eye className="h-4 w-4" />
+        <span>{photo.views_count} 浏览</span>
+      </div>
     </div>
   );
 }
