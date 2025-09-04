@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateProfile } from '@/hooks/useProfiles';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,9 +33,34 @@ export default function Auth() {
 
   useEffect(() => {
     if (user && step === 'auth') {
-      navigate('/');
+      // 用户已登录，检查是否已有profile
+      checkUserProfile();
     }
   }, [user, step, navigate]);
+
+  const checkUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (profile) {
+        // 已有profile，直接跳转首页
+        navigate('/');
+      } else {
+        // 没有profile，进入设置页面
+        setStep('profile');
+      }
+    } catch (error) {
+      console.error('Check profile error:', error);
+      // 出错时默认进入profile设置
+      setStep('profile');
+    }
+  };
 
   // 验证密码
   const validatePasswords = () => {
@@ -77,10 +103,11 @@ export default function Auth() {
           navigate('/');
         } else {
           toast({
-            title: "注册成功！",
-            description: "请完善您的个人资料",
+            title: "注册邮件已发送！",
+            description: "请检查您的邮箱并点击确认链接完成注册",
           });
-          setStep('profile');
+          // 注册后不立即进入profile设置，等待邮箱确认
+          // 用户确认邮箱后会自动登录并重定向
         }
       }
     } catch (error) {
