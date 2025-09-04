@@ -52,15 +52,16 @@ export const useUpdateProfile = () => {
       const user = (await supabase.auth.getUser()).data.user;
       if (!user) throw new Error('未登录');
 
+      // 使用 upsert 操作，如果记录存在则更新，不存在则创建
       const { data: profile, error } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          user_id: user.id,
           display_name: data.display_name,
           bio: data.bio,
           favorite_camera: data.favorite_camera,
           avatar_url: data.avatar_url,
         })
-        .eq('user_id', user.id)
         .select()
         .single();
 
