@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Camera, Heart, Eye, Upload, LogOut, LogIn } from 'lucide-react';
 import { usePhotos, Photo } from '@/hooks/usePhotos';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfiles';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -11,6 +12,7 @@ export default function PhotoGrid() {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const { data: photos, isLoading, error } = usePhotos();
   const { user, signOut, loading: authLoading } = useAuth();
+  const { data: userProfile } = useProfile();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -87,7 +89,7 @@ export default function PhotoGrid() {
             {user ? (
               <>
                 <span className="text-sm text-muted-foreground">
-                  欢迎, {user.email}
+                  欢迎, {userProfile?.display_name || user.email}
                 </span>
                 <Button 
                   variant="outline" 

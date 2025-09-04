@@ -70,6 +70,7 @@ export type Database = {
           bio: string | null
           created_at: string | null
           display_name: string | null
+          favorite_camera: string | null
           updated_at: string | null
           user_id: string
         }
@@ -78,6 +79,7 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           display_name?: string | null
+          favorite_camera?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -86,6 +88,7 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           display_name?: string | null
+          favorite_camera?: string | null
           updated_at?: string | null
           user_id?: string
         }
