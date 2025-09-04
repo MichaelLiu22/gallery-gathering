@@ -7,9 +7,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfiles';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import UploadPhotoDialog from './UploadPhotoDialog';
 
 export default function PhotoGrid() {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const { data: photos, isLoading, error } = usePhotos();
   const { user, signOut, loading: authLoading } = useAuth();
   const { data: userProfile } = useProfile();
@@ -102,6 +104,7 @@ export default function PhotoGrid() {
                 <Button 
                   variant="outline" 
                   size="sm"
+                  onClick={() => setUploadDialogOpen(true)}
                   className="bg-gradient-to-r from-primary to-accent text-background hover:opacity-90 transition-all"
                 >
                   <Upload className="h-4 w-4 mr-2" />
@@ -279,6 +282,11 @@ export default function PhotoGrid() {
           </div>
         </div>
       )}
+
+      <UploadPhotoDialog 
+        open={uploadDialogOpen} 
+        onOpenChange={setUploadDialogOpen} 
+      />
     </div>
   );
 }
