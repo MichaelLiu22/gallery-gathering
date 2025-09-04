@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Camera, Heart, Eye, Upload, LogOut, LogIn } from 'lucide-react';
@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function PhotoGrid() {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const { data: photos, isLoading, error } = usePhotos();
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -48,7 +48,19 @@ export default function PhotoGrid() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">初始化中...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
+    console.error('Photos loading error:', error);
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
