@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Heart, Eye, Upload, LogOut, LogIn } from 'lucide-react';
+import { Camera, Heart, Eye, Upload, LogOut, LogIn, User } from 'lucide-react';
 import { usePhotos, Photo } from '@/hooks/usePhotos';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfiles';
@@ -91,6 +91,14 @@ export default function PhotoGrid() {
                 <span className="text-sm text-muted-foreground">
                   欢迎, {userProfile?.display_name || user.email}
                 </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/profile')}
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  个人资料
+                </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
