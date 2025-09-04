@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Camera, AlertCircle, User, Quote, CameraIcon } from 'lucide-react';
+import { Camera, AlertCircle, User, Quote, CameraIcon, Mail, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,6 +20,11 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // 重发确认邮件状态
+  const [showResendEmail, setShowResendEmail] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendEmail, setResendEmail] = useState('');
   
   // 用户资料字段
   const [displayName, setDisplayName] = useState('');
@@ -103,6 +108,9 @@ export default function Auth() {
             title: "请确认邮箱",
             description: "请检查您的邮箱并点击确认链接完成注册",
           });
+          // 显示重发确认邮件选项
+          setShowResendEmail(true);
+          setResendEmail(email);
         } else {
           let errorMessage = error.message;
           
@@ -111,6 +119,9 @@ export default function Auth() {
             errorMessage = "邮箱或密码错误，请检查后重试";
           } else if (errorMessage.includes('Email not confirmed')) {
             errorMessage = "邮箱未确认，请检查您的邮箱并点击确认链接";
+            // 显示重发确认邮件选项
+            setShowResendEmail(true);
+            setResendEmail(email);
           } else if (errorMessage.includes('Password should be at least')) {
             errorMessage = "密码至少需要6个字符";
           }
@@ -188,6 +199,56 @@ export default function Auth() {
   // 跳过资料设置
   const handleSkipProfile = () => {
     navigate('/');
+  };
+
+  // 重发确认邮件
+  const handleResendConfirmation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!resendEmail.trim()) {
+      toast({
+        title: "请输入邮箱",
+        description: "请输入需要重发确认邮件的邮箱地址",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setResendLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: resendEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "发送失败",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "邮件已发送！",
+          description: "确认邮件已重新发送，请检查您的收件箱",
+        });
+        setShowResendEmail(false);
+        setResendEmail('');
+      }
+    } catch (error) {
+      console.error('Resend confirmation error:', error);
+      toast({
+        title: "发送失败",
+        description: "操作失败，请稍后重试",
+        variant: "destructive",
+      });
+    } finally {
+      setResendLoading(false);
+    }
   };
 
   // 认证表单
@@ -276,6 +337,52 @@ export default function Auth() {
               {isLogin ? '没有账户？立即注册' : '已有账户？立即登录'}
             </button>
           </div>
+
+          {/* 重发确认邮件表单 */}
+          {showResendEmail && (
+            <Card className="mt-4 p-4 border-dashed border-muted-foreground">
+              <div className="flex items-center mb-3">
+                <Mail className="h-4 w-4 text-muted-foreground mr-2" />
+                <h3 className="text-sm font-medium">重新发送确认邮件</h3>
+              </div>
+              
+              <form onSubmit={handleResendConfirmation} className="space-y-3">
+                <div>
+                  <Label htmlFor="resendEmail" className="text-xs">邮箱地址</Label>
+                  <Input
+                    id="resendEmail"
+                    type="email"
+                    value={resendEmail}
+                    onChange={(e) => setResendEmail(e.target.value)}
+                    required
+                    className="mt-1"
+                    placeholder="请输入邮箱地址"
+                  />
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Button 
+                    type="submit" 
+                    size="sm" 
+                    className="flex-1"
+                    disabled={resendLoading}
+                  >
+                    <RefreshCw className={`h-3 w-3 mr-1 ${resendLoading ? 'animate-spin' : ''}`} />
+                    {resendLoading ? '发送中...' : '重新发送'}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowResendEmail(false)}
+                    disabled={resendLoading}
+                  >
+                    取消
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          )}
 
           {!isLogin && (
             <div className="mt-4 p-3 bg-muted rounded-lg">
