@@ -6,6 +6,7 @@ export interface UploadPhotoData {
   title: string;
   description?: string;
   camera_equipment?: string;
+  visibility: 'public' | 'friends' | 'private';
   file: File;
   exposure_settings?: {
     iso?: number;
@@ -55,6 +56,7 @@ export const useUploadPhoto = () => {
           image_url: urlData.publicUrl,
           camera_equipment: data.camera_equipment,
           exposure_settings: data.exposure_settings,
+          visibility: data.visibility,
           photographer_id: user.id,
         })
         .select()

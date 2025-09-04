@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useUploadPhoto } from '@/hooks/useUploadPhoto';
 import { Upload, X, Camera } from 'lucide-react';
@@ -17,6 +18,7 @@ const formSchema = z.object({
   title: z.string().min(1, '请输入作品标题'),
   description: z.string().optional(),
   camera_equipment: z.string().optional(),
+  visibility: z.enum(['public', 'friends', 'private']).default('public'),
 });
 
 interface UploadPhotoDialogProps {
@@ -37,6 +39,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
       title: '',
       description: '',
       camera_equipment: '',
+      visibility: 'public' as const,
     },
   });
 
@@ -99,6 +102,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
       title: values.title,
       description: values.description,
       camera_equipment: values.camera_equipment,
+      visibility: values.visibility,
       file: selectedFile,
       exposure_settings: exposureData,
     });
@@ -225,6 +229,29 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
                         <FormControl>
                           <Input placeholder="例如: Canon EOS R5" {...field} />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="visibility"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>可见性</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="选择可见性" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="public">公开 - 所有人可见</SelectItem>
+                            <SelectItem value="friends">朋友 - 仅朋友可见</SelectItem>
+                            <SelectItem value="private">私密 - 仅自己可见</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}

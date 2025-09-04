@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      friend_requests: {
+        Row: {
+          created_at: string
+          id: string
+          receiver_id: string
+          sender_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          receiver_id: string
+          sender_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          receiver_id?: string
+          sender_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      friendships: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       photo_comments: {
         Row: {
           content: string
@@ -91,6 +145,7 @@ export type Database = {
           title: string
           updated_at: string | null
           views_count: number
+          visibility: string | null
         }
         Insert: {
           camera_equipment?: string | null
@@ -104,6 +159,7 @@ export type Database = {
           title: string
           updated_at?: string | null
           views_count?: number
+          visibility?: string | null
         }
         Update: {
           camera_equipment?: string | null
@@ -117,6 +173,7 @@ export type Database = {
           title?: string
           updated_at?: string | null
           views_count?: number
+          visibility?: string | null
         }
         Relationships: [
           {
