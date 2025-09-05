@@ -340,6 +340,75 @@ interface PhotoCardProps {
 }
 
 function PhotoCard({ photo, onClick }: PhotoCardProps) {
+  const { likesCount } = useLikes(photo.id);
+  
+  return (
+    <Card 
+      className="group cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+      onClick={onClick}
+    >
+      <CardContent className="p-0">
+        <div className="aspect-[4/3] overflow-hidden rounded-t-lg relative">
+          <img
+            src={photo.image_url}
+            alt={photo.title}
+            className="w-full h-full object-contain bg-muted group-hover:scale-105 transition-transform duration-300"
+          />
+          {/* 艺术字体评分显示 */}
+          {photo.average_rating && photo.average_rating > 0 && (
+            <div className="absolute top-3 right-3 bg-gradient-to-br from-amber-400 to-orange-500 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg">
+              <div className="text-center">
+                <div className="text-lg font-bold leading-none">
+                  {photo.average_rating.toFixed(1)}
+                </div>
+                <div className="text-xs opacity-90 leading-none">
+                  ★
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <h3 className="font-semibold mb-2 line-clamp-1">{photo.title}</h3>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={photo.profiles?.avatar_url || undefined} />
+                <AvatarFallback className="text-xs">
+                  {photo.profiles?.display_name?.charAt(0) || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm text-muted-foreground">
+                {photo.profiles?.display_name || '匿名用户'}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-1">
+                <Heart className="h-4 w-4" />
+                <span>{likesCount}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <MessageCircle className="h-4 w-4" />
+                <span>{photo.comments_count || 0}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Flame className="h-4 w-4" />
+                <span>{Math.round(calculateHotness(photo))}</span>
+              </div>
+            </div>
+            {photo.camera_equipment && (
+              <span className="text-xs truncate max-w-[120px]">
+                {photo.camera_equipment}
+              </span>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
   return (
     <Card 
       className="group cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"

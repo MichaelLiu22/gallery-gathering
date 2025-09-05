@@ -105,6 +105,7 @@ export const useRatings = (photoId: number) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['photo-ratings', photoId] });
       queryClient.invalidateQueries({ queryKey: ['photos'] });
+      queryClient.invalidateQueries({ queryKey: ['photo-likes'] });
       toast({
         title: "评分成功",
         description: "您的评分已保存",
@@ -137,6 +138,7 @@ export const useRatings = (photoId: number) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['photo-ratings', photoId] });
       queryClient.invalidateQueries({ queryKey: ['photos'] });
+      queryClient.invalidateQueries({ queryKey: ['photo-likes'] });
       toast({
         title: "评分已删除",
         description: "您的评分已删除",
