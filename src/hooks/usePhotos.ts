@@ -11,6 +11,8 @@ export interface Photo {
   likes_count: number;
   views_count: number;
   comments_count?: number;
+  average_rating?: number | null;
+  ratings_count?: number | null;
   created_at: string;
   photographer_id: string;
   visibility: 'public' | 'friends' | 'private';

@@ -409,60 +409,6 @@ function PhotoCard({ photo, onClick }: PhotoCardProps) {
     </Card>
   );
 }
-  return (
-    <Card 
-      className="group cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
-      onClick={onClick}
-    >
-      <CardContent className="p-0">
-        <div className="aspect-[4/3] overflow-hidden rounded-t-lg">
-          <img
-            src={photo.image_url}
-            alt={photo.title}
-            className="w-full h-full object-contain bg-muted group-hover:scale-105 transition-transform duration-300"
-          />
-        </div>
-        <div className="p-4">
-          <h3 className="font-semibold mb-2 line-clamp-1">{photo.title}</h3>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-2">
-              <Avatar className="h-6 w-6">
-                <AvatarImage src={photo.profiles?.avatar_url || undefined} />
-                <AvatarFallback className="text-xs">
-                  {photo.profiles?.display_name?.charAt(0) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm text-muted-foreground">
-                {photo.profiles?.display_name || '匿名用户'}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-1">
-                <Heart className="h-4 w-4" />
-                <span>{photo.likes_count}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <MessageCircle className="h-4 w-4" />
-                <span>{photo.comments_count || 0}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Flame className="h-4 w-4" />
-                <span>{Math.round(calculateHotness(photo))}</span>
-              </div>
-            </div>
-            {photo.camera_equipment && (
-              <span className="text-xs truncate max-w-[120px]">
-                {photo.camera_equipment}
-              </span>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 // PhotoActions component
 interface PhotoActionsProps {
