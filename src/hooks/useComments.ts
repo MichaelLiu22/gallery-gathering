@@ -9,10 +9,12 @@ export interface Comment {
   created_at: string;
   updated_at: string;
   user_id: string;
+  parent_id?: string | null;
   profiles: {
     display_name: string | null;
     avatar_url: string | null;
   } | null;
+  replies?: Comment[];
 }
 
 export const useComments = (photoId: number) => {
@@ -50,13 +52,31 @@ export const useComments = (photoId: number) => {
         profiles: profilesData.find(profile => profile.user_id === comment.user_id) || null
       }));
 
-      return commentsWithProfiles as Comment[];
+      // Organize comments into threads with replies
+      const rootComments = commentsWithProfiles.filter(comment => !comment.parent_id);
+      const repliesMap = new Map<string, Comment[]>();
+      
+      // Group replies by parent_id
+      commentsWithProfiles.forEach(comment => {
+        if (comment.parent_id) {
+          if (!repliesMap.has(comment.parent_id)) {
+            repliesMap.set(comment.parent_id, []);
+          }
+          repliesMap.get(comment.parent_id)!.push(comment);
+        }
+      });
+      
+      // Attach replies to their parent comments
+      return rootComments.map(comment => ({
+        ...comment,
+        replies: repliesMap.get(comment.id) || []
+      }));
     },
   });
 
   // Add comment mutation
   const addComment = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, parentId }: { content: string; parentId?: string }) => {
       if (!user) {
         throw new Error('必须登录才能评论');
       }
@@ -66,7 +86,8 @@ export const useComments = (photoId: number) => {
         .insert({
           photo_id: photoId,
           user_id: user.id,
-          content: content.trim()
+          content: content.trim(),
+          parent_id: parentId || null
         });
 
       if (error) throw error;

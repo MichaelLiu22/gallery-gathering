@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Heart, MessageCircle, Eye, Camera, User, Upload, LogOut, LogIn, Flame } from "lucide-react";
 import UploadPhotoDialog from "./UploadPhotoDialog";
 import PhotoComments from "./PhotoComments";
+import PhotoRating from "./PhotoRating";
 import SortFilter from "./SortFilter";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
@@ -258,13 +259,13 @@ export default function PhotoGrid() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Photo */}
               <div className="space-y-4">
-                <AspectRatio ratio={4/3}>
+                <div className="max-h-[60vh] overflow-hidden rounded-lg bg-muted">
                   <img
                     src={selectedPhoto.image_url}
                     alt={selectedPhoto.title}
-                    className="rounded-lg object-cover w-full h-full"
+                    className="w-full h-full object-contain"
                   />
-                </AspectRatio>
+                </div>
                 
                 <PhotoActions photo={selectedPhoto} />
               </div>
@@ -312,6 +313,10 @@ export default function PhotoGrid() {
                 
                 <Separator />
                 
+                <PhotoRating photoId={selectedPhoto.id} />
+                
+                <Separator />
+                
                 <PhotoComments photoId={selectedPhoto.id} />
               </div>
             </div>
@@ -341,13 +346,13 @@ function PhotoCard({ photo, onClick }: PhotoCardProps) {
       onClick={onClick}
     >
       <CardContent className="p-0">
-        <AspectRatio ratio={4/3}>
+        <div className="aspect-[4/3] overflow-hidden rounded-t-lg">
           <img
             src={photo.image_url}
             alt={photo.title}
-            className="rounded-t-lg object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-contain bg-muted group-hover:scale-105 transition-transform duration-300"
           />
-        </AspectRatio>
+        </div>
         <div className="p-4">
           <h3 className="font-semibold mb-2 line-clamp-1">{photo.title}</h3>
           <div className="flex items-center justify-between mb-2">

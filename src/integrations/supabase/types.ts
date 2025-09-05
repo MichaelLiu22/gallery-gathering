@@ -73,6 +73,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          parent_id: string | null
           photo_id: number
           updated_at: string
           user_id: string
@@ -81,6 +82,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           photo_id: number
           updated_at?: string
           user_id: string
@@ -89,11 +91,19 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           photo_id?: number
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "photo_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "photo_comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "photo_comments_photo_id_fkey"
             columns: ["photo_id"]
@@ -132,8 +142,45 @@ export type Database = {
           },
         ]
       }
+      photo_ratings: {
+        Row: {
+          average_score: number | null
+          composition_score: number
+          created_at: string
+          id: string
+          photo_id: number
+          storytelling_score: number
+          technique_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          average_score?: number | null
+          composition_score: number
+          created_at?: string
+          id?: string
+          photo_id: number
+          storytelling_score: number
+          technique_score: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          average_score?: number | null
+          composition_score?: number
+          created_at?: string
+          id?: string
+          photo_id?: number
+          storytelling_score?: number
+          technique_score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       photos: {
         Row: {
+          average_rating: number | null
           camera_equipment: string | null
           created_at: string | null
           description: string | null
@@ -142,12 +189,14 @@ export type Database = {
           image_url: string
           likes_count: number
           photographer_id: string
+          ratings_count: number | null
           title: string
           updated_at: string | null
           views_count: number
           visibility: string | null
         }
         Insert: {
+          average_rating?: number | null
           camera_equipment?: string | null
           created_at?: string | null
           description?: string | null
@@ -156,12 +205,14 @@ export type Database = {
           image_url: string
           likes_count?: number
           photographer_id: string
+          ratings_count?: number | null
           title: string
           updated_at?: string | null
           views_count?: number
           visibility?: string | null
         }
         Update: {
+          average_rating?: number | null
           camera_equipment?: string | null
           created_at?: string | null
           description?: string | null
@@ -170,6 +221,7 @@ export type Database = {
           image_url?: string
           likes_count?: number
           photographer_id?: string
+          ratings_count?: number | null
           title?: string
           updated_at?: string | null
           views_count?: number
