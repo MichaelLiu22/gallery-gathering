@@ -7,6 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Star, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface PhotoRatingProps {
   photoId: number;
@@ -15,6 +16,7 @@ interface PhotoRatingProps {
 export default function PhotoRating({ photoId }: PhotoRatingProps) {
   const { user } = useAuth();
   const { ratings, userRating, stats, submitRating, deleteRating, isSubmitting, isDeleting } = useRatings(photoId);
+  const { toast } = useToast();
   
   const [showRatingForm, setShowRatingForm] = useState(false);
   const [ratingInput, setRatingInput] = useState<RatingInput>({
@@ -202,9 +204,18 @@ export default function PhotoRating({ photoId }: PhotoRatingProps) {
                           {rating.profiles?.display_name?.charAt(0) || 'U'}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-muted-foreground">
-                        {rating.profiles?.display_name || '匿名用户'}
-                      </span>
+                      <button
+                        onClick={() => {
+                          toast({
+                            title: "需要VIP会员",
+                            description: "升级VIP会员后可以查看评分者身份",
+                            variant: "default",
+                          });
+                        }}
+                        className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                      >
+                        匿名用户
+                      </button>
                     </div>
                     <div className="font-medium text-primary">
                       {rating.average_score.toFixed(1)}
