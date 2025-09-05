@@ -98,6 +98,8 @@ export const useRatings = (photoId: number) => {
           photo_id: photoId,
           user_id: user.id,
           ...ratingInput
+        }, {
+          onConflict: 'photo_id,user_id'
         });
 
       if (error) throw error;
