@@ -37,7 +37,15 @@ export const useLikes = (photoId: number) => {
         throw new Error('必须登录才能点赞');
       }
 
-      if (likesData?.userHasLiked) {
+      // First check current state from database to avoid race conditions
+      const { data: existingLike } = await supabase
+        .from('photo_likes')
+        .select('id')
+        .eq('photo_id', photoId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingLike) {
         // Remove like
         const { error } = await supabase
           .from('photo_likes')
@@ -47,12 +55,14 @@ export const useLikes = (photoId: number) => {
 
         if (error) throw error;
       } else {
-        // Add like
+        // Add like - use upsert to handle race conditions
         const { error } = await supabase
           .from('photo_likes')
-          .insert({
+          .upsert({
             photo_id: photoId,
             user_id: user.id
+          }, {
+            onConflict: 'user_id,photo_id'
           });
 
         if (error) throw error;
