@@ -92,14 +92,15 @@ export const useRatings = (photoId: number) => {
         throw new Error('必须登录才能评分');
       }
 
+      // Use upsert to handle both insert and update cases
       const { error } = await supabase
         .from('photo_ratings')
         .upsert({
           photo_id: photoId,
           user_id: user.id,
-          ...ratingInput
-        }, {
-          onConflict: 'photo_id,user_id'
+          composition_score: ratingInput.composition_score,
+          storytelling_score: ratingInput.storytelling_score,
+          technique_score: ratingInput.technique_score
         });
 
       if (error) throw error;
