@@ -402,7 +402,7 @@ interface PhotoActionsProps {
 
 function PhotoActions({ photo }: PhotoActionsProps) {
   const { user } = useAuth();
-  const { userHasLiked, toggleLike, isToggling } = useLikes(photo.id);
+  const { likesCount, userHasLiked, toggleLike, isToggling } = useLikes(photo.id);
 
   const handleLike = () => {
     if (!user) return;
@@ -422,7 +422,7 @@ function PhotoActions({ photo }: PhotoActionsProps) {
           <Heart 
             className={`h-4 w-4 mr-1 ${userHasLiked ? "fill-current" : ""}`} 
           />
-          {photo.likes_count}
+          {likesCount}
         </Button>
         <div className="flex items-center space-x-1 text-muted-foreground">
           <MessageCircle className="h-4 w-4" />
