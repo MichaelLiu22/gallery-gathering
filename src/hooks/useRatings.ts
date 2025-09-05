@@ -34,7 +34,8 @@ export const useRatings = (photoId: number) => {
   const { data: ratingsData, isLoading } = useQuery({
     queryKey: ['photo-ratings', photoId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get user profiles manually to avoid relationship issues
+      const { data: ratings, error } = await supabase
         .from('photo_ratings')
         .select(`
           id,
@@ -45,43 +46,63 @@ export const useRatings = (photoId: number) => {
           technique_score,
           average_score,
           created_at,
-          updated_at,
-          profiles:user_id (
-            display_name,
-            avatar_url
-          )
+          updated_at
         `)
         .eq('photo_id', photoId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const ratings = data?.map(rating => ({
-        ...rating,
-        profiles: rating.profiles || { display_name: '', avatar_url: '' }
-      })) as Rating[];
-      const userRating = user ? ratings.find(r => r.user_id === user.id) : null;
-      
-      // Calculate overall averages
-      const overallStats = ratings.length > 0 ? {
-        averageComposition: ratings.reduce((sum, r) => sum + r.composition_score, 0) / ratings.length,
-        averageStorytelling: ratings.reduce((sum, r) => sum + r.storytelling_score, 0) / ratings.length,
-        averageTechnique: ratings.reduce((sum, r) => sum + r.technique_score, 0) / ratings.length,
-        overallAverage: ratings.reduce((sum, r) => sum + r.average_score, 0) / ratings.length,
-        totalRatings: ratings.length
-      } : {
-        averageComposition: 0,
-        averageStorytelling: 0,
-        averageTechnique: 0,
-        overallAverage: 0,
-        totalRatings: 0
-      };
+      // Fetch profiles separately
+      if (ratings && ratings.length > 0) {
+        const userIds = ratings.map(r => r.user_id);
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, avatar_url')
+          .in('user_id', userIds);
 
-      return {
-        ratings,
-        userRating,
-        stats: overallStats
-      };
+        if (profilesError) throw profilesError;
+
+        // Merge profiles with ratings
+        const ratingsWithProfiles = ratings.map(rating => ({
+          ...rating,
+          profiles: profiles?.find(p => p.user_id === rating.user_id) || null
+        })) as Rating[];
+        const userRating = user ? ratingsWithProfiles.find(r => r.user_id === user.id) : null;
+        
+        // Calculate overall averages
+        const overallStats = ratingsWithProfiles.length > 0 ? {
+          averageComposition: ratingsWithProfiles.reduce((sum, r) => sum + r.composition_score, 0) / ratingsWithProfiles.length,
+          averageStorytelling: ratingsWithProfiles.reduce((sum, r) => sum + r.storytelling_score, 0) / ratingsWithProfiles.length,
+          averageTechnique: ratingsWithProfiles.reduce((sum, r) => sum + r.technique_score, 0) / ratingsWithProfiles.length,
+          overallAverage: ratingsWithProfiles.reduce((sum, r) => sum + r.average_score, 0) / ratingsWithProfiles.length,
+          totalRatings: ratingsWithProfiles.length
+        } : {
+          averageComposition: 0,
+          averageStorytelling: 0,
+          averageTechnique: 0,
+          overallAverage: 0,
+          totalRatings: 0
+        };
+
+        return {
+          ratings: ratingsWithProfiles,
+          userRating,
+          stats: overallStats
+        };
+      } else {
+        return {
+          ratings: [],
+          userRating: null,
+          stats: {
+            averageComposition: 0,
+            averageStorytelling: 0,
+            averageTechnique: 0,
+            overallAverage: 0,
+            totalRatings: 0
+          }
+        };
+      }
     },
   });
 
