@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePhotos, SortOrder, PhotoFilter } from '@/hooks/usePhotos';
 import { useFriends } from '@/hooks/useFriends';
@@ -8,9 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Heart, 
   MessageCircle, 
@@ -19,28 +16,18 @@ import {
   User, 
   LogOut,
   Camera,
-  CalendarDays,
   Eye,
   Images,
-  ChevronLeft,
-  ChevronRight,
-  ZoomIn,
   Trash2
 } from 'lucide-react';
 import UploadPhotoDialog from './UploadPhotoDialog';
-import PhotoComments from './PhotoComments';
-import PhotoRating from './PhotoRating';
 import SortFilter from './SortFilter';
-import ImageZoom from './ImageZoom';
 import NotificationBadge from './NotificationBadge';
 import FriendManagement from './FriendManagement';
 import { useDeletePhoto } from '@/hooks/useDeletePhoto';
 
 export default function PhotoGrid() {
-  const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [showImageZoom, setShowImageZoom] = useState(false);
   const [sortOrder, setSortOrder] = useState<SortOrder>('latest');
   const [filter, setFilter] = useState<PhotoFilter>('all');
 
@@ -166,137 +153,13 @@ export default function PhotoGrid() {
                 key={photo.id} 
                 photo={photo} 
                 onClick={() => {
-                  setSelectedPhoto(photo);
-                  setCurrentImageIndex(0);
+                  window.location.href = `/photo/${photo.id}`;
                 }}
               />
             ))}
           </div>
         )}
       </main>
-
-      {/* Photo Detail Modal */}
-      {selectedPhoto && (
-        <Dialog open={!!selectedPhoto} onOpenChange={(open) => {
-          if (!open) {
-            setSelectedPhoto(null);
-            setCurrentImageIndex(0);
-          }
-        }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{selectedPhoto.title}</DialogTitle>
-          </DialogHeader>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              {/* Image Gallery */}
-              <div className="relative">
-                <img
-                  src={selectedPhoto.image_urls ? selectedPhoto.image_urls[currentImageIndex] : selectedPhoto.image_url}
-                  alt={selectedPhoto.title}
-                  className="w-full h-64 object-cover rounded-lg cursor-pointer"
-                  onClick={() => setShowImageZoom(true)}
-                />
-                
-                {/* Zoom button */}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={() => setShowImageZoom(true)}
-                >
-                  <ZoomIn className="h-4 w-4" />
-                </Button>
-                
-                {/* Navigation for multiple images */}
-                {selectedPhoto.image_urls && selectedPhoto.image_urls.length > 1 && (
-                  <>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="absolute left-2 top-1/2 -translate-y-1/2"
-                      onClick={() => setCurrentImageIndex(prev => 
-                        prev === 0 ? selectedPhoto.image_urls!.length - 1 : prev - 1
-                      )}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="absolute right-12 top-1/2 -translate-y-1/2"
-                      onClick={() => setCurrentImageIndex(prev => 
-                        prev === selectedPhoto.image_urls!.length - 1 ? 0 : prev + 1
-                      )}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                    
-                    {/* Image counter */}
-                    <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
-                      {currentImageIndex + 1} / {selectedPhoto.image_urls.length}
-                    </div>
-                  </>
-                )}
-              </div>
-              
-              {/* Thumbnail navigation for multiple images */}
-              {selectedPhoto.image_urls && selectedPhoto.image_urls.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {selectedPhoto.image_urls.map((url: string, index: number) => (
-                    <img
-                      key={index}
-                      src={url}
-                      alt={`${selectedPhoto.title} ${index + 1}`}
-                      className={`h-16 w-16 object-cover rounded cursor-pointer flex-shrink-0 border-2 ${
-                        index === currentImageIndex ? 'border-primary' : 'border-transparent'
-                      }`}
-                      onClick={() => setCurrentImageIndex(index)}
-                    />
-                  ))}
-                </div>
-              )}
-              
-              <PhotoActions photo={selectedPhoto} />
-            </div>
-            
-            <div className="space-y-4">
-              {selectedPhoto.description && (
-                <div>
-                  <h4 className="font-medium mb-2">作品描述</h4>
-                  <p className="text-muted-foreground">{selectedPhoto.description}</p>
-                </div>
-              )}
-              
-              {selectedPhoto.camera_equipment && (
-                <div>
-                  <h4 className="font-medium mb-2">相机设备</h4>
-                  <p className="text-muted-foreground">{selectedPhoto.camera_equipment}</p>
-                </div>
-              )}
-              
-              <Separator />
-              
-              <PhotoRating photoId={selectedPhoto.id} />
-              
-              <Separator />
-              
-              <PhotoComments photoId={selectedPhoto.id} />
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-      )}
-
-      {/* Image Zoom Modal */}
-      {showImageZoom && selectedPhoto && (
-        <ImageZoom
-          src={selectedPhoto.image_urls ? selectedPhoto.image_urls[currentImageIndex] : selectedPhoto.image_url}
-          alt={selectedPhoto.title}
-          onClose={() => setShowImageZoom(false)}
-        />
-      )}
 
       <UploadPhotoDialog
         open={uploadDialogOpen}
@@ -366,6 +229,12 @@ const PhotoCard: React.FC<PhotoCardProps> = ({ photo, onClick }) => {
                 <span>{photo.views_count || 0}</span>
               </div>
             </div>
+            {photo.average_rating > 0 && (
+              <div className="flex items-center space-x-1">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <span className="text-primary font-medium">{photo.average_rating.toFixed(1)}</span>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
