@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useFriends, useSendFriendRequest, useFriendRequests } from '@/hooks/useFriends';
+import { useFollowUser, useUnfollowUser, useIsFollowing } from '@/hooks/useFollows';
 import { useProfile } from '@/hooks/useProfiles';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -21,10 +22,12 @@ import {
   UserPlus,
   UserCheck,
   Clock,
-  TrendingUp
+  TrendingUp,
+  UserMinus
 } from 'lucide-react';
 import PhotoComments from '@/components/PhotoComments';
 import PhotoRating from '@/components/PhotoRating';
+import AddFriendDialog from '@/components/AddFriendDialog';
 import { useLikes } from '@/hooks/useLikes';
 import { useToast } from '@/hooks/use-toast';
 
@@ -61,10 +64,14 @@ export default function PhotoView() {
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [showAddFriendDialog, setShowAddFriendDialog] = useState(false);
 
   const { data: friends } = useFriends();
   const { data: friendRequests } = useFriendRequests();
   const { mutate: sendFriendRequest, isPending: isSendingRequest } = useSendFriendRequest();
+  const { mutate: followUser, isPending: isFollowing } = useFollowUser();
+  const { mutate: unfollowUser, isPending: isUnfollowing } = useUnfollowUser();
+  const { data: isFollowingUser } = useIsFollowing(photo?.photographer_id || '');
   const { likesCount, userHasLiked, toggleLike, isToggling } = useLikes(id ? parseInt(id) : 0);
 
   // Check friend status
@@ -126,14 +133,19 @@ export default function PhotoView() {
   }, [id, navigate]);
 
   const handleAddFriend = () => {
+    setShowAddFriendDialog(true);
+  };
+
+  const handleConfirmAddFriend = () => {
     if (!photo || !user) return;
     
     sendFriendRequest(photo.photographer_id, {
       onSuccess: () => {
         toast({
           title: "好友请求已发送",
-          description: "等待对方确认",
+          description: `已向 ${photo.profiles?.display_name || '该用户'} 发送好友请求`,
         });
+        setShowAddFriendDialog(false);
       },
       onError: () => {
         toast({
@@ -141,8 +153,33 @@ export default function PhotoView() {
           description: "请稍后重试",
           variant: "destructive",
         });
+        setShowAddFriendDialog(false);
       }
     });
+  };
+
+  const handleFollow = () => {
+    if (!photo || !user) return;
+    
+    if (isFollowingUser) {
+      unfollowUser(photo.photographer_id, {
+        onSuccess: () => {
+          toast({
+            title: "已取消关注",
+            description: `已取消关注 ${photo.profiles?.display_name || '该用户'}`,
+          });
+        },
+      });
+    } else {
+      followUser(photo.photographer_id, {
+        onSuccess: () => {
+          toast({
+            title: "关注成功",
+            description: `已关注 ${photo.profiles?.display_name || '该用户'}`,
+          });
+        },
+      });
+    }
   };
 
   const handleImageZoom = (delta: number) => {
@@ -212,29 +249,54 @@ export default function PhotoView() {
             返回首页
           </Button>
           
-          {friendStatus === 'none' && (
-            <Button 
-              onClick={handleAddFriend}
-              disabled={isSendingRequest}
-              className="bg-gradient-to-r from-primary to-accent"
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              添加好友
-            </Button>
-          )}
-          
-          {friendStatus === 'friend' && (
-            <Button variant="secondary" disabled>
-              <UserCheck className="h-4 w-4 mr-2" />
-              已是好友
-            </Button>
-          )}
-          
-          {friendStatus === 'pending' && (
-            <Button variant="secondary" disabled>
-              <Clock className="h-4 w-4 mr-2" />
-              已发送请求
-            </Button>
+          {friendStatus !== 'self' && (
+            <div className="flex items-center space-x-2">
+              {/* Follow Button */}
+              <Button
+                onClick={handleFollow}
+                disabled={isFollowing || isUnfollowing}
+                variant={isFollowingUser ? "outline" : "default"}
+                className={!isFollowingUser ? "bg-gradient-to-r from-primary to-accent" : ""}
+              >
+                {isFollowingUser ? (
+                  <>
+                    <UserMinus className="h-4 w-4 mr-2" />
+                    取消关注
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    关注
+                  </>
+                )}
+              </Button>
+
+              {/* Friend Button */}
+              {friendStatus === 'none' && (
+                <Button 
+                  onClick={handleAddFriend}
+                  disabled={isSendingRequest}
+                  variant="outline"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  添加好友
+                </Button>
+              )}
+              
+              {friendStatus === 'friend' && (
+                <Button variant="secondary" disabled>
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  已是好友
+                </Button>
+              )}
+              
+              {friendStatus === 'pending' && (
+                <Button variant="secondary" disabled>
+                  <Clock className="h-4 w-4 mr-2" />
+                  已发送请求
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
@@ -422,6 +484,14 @@ export default function PhotoView() {
           </div>
         </div>
       </div>
+
+      <AddFriendDialog
+        open={showAddFriendDialog}
+        onOpenChange={setShowAddFriendDialog}
+        onConfirm={handleConfirmAddFriend}
+        userName={photo?.profiles?.display_name || '该用户'}
+        isLoading={isSendingRequest}
+      />
     </div>
   );
 }

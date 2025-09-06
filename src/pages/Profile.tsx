@@ -2,13 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfiles';
 import { usePhotos } from '@/hooks/usePhotos';
+import { useFollowCounts } from '@/hooks/useFollows';
+import { useFriends } from '@/hooks/useFriends';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { User, Quote, CameraIcon, ArrowLeft, Award, Star, Eye, Heart, MessageCircle } from 'lucide-react';
+import { 
+  User, 
+  Quote, 
+  CameraIcon, 
+  ArrowLeft, 
+  Award, 
+  Star, 
+  Eye, 
+  Heart, 
+  MessageCircle,
+  UserPlus,
+  Users
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,6 +30,8 @@ export default function Profile() {
   const { user } = useAuth();
   const { data: profile, isLoading } = useProfile();
   const { data: userPhotos } = usePhotos('latest', 'mine');
+  const { data: friends } = useFriends();
+  const { data: followCounts } = useFollowCounts(user?.id || '');
   const { mutate: updateProfile, isPending } = useUpdateProfile();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -143,6 +159,30 @@ export default function Profile() {
                     <Star className="h-3 w-3 mr-1" />
                     {totalScore.toFixed(1)}
                   </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 社交统计 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  社交统计
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">关注的人</span>
+                  <Badge variant="secondary">{followCounts?.followingCount || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">关注者</span>
+                  <Badge variant="secondary">{followCounts?.followersCount || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">好友数量</span>
+                  <Badge variant="secondary">{friends?.length || 0}</Badge>
                 </div>
               </CardContent>
             </Card>

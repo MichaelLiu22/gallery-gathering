@@ -23,7 +23,7 @@ export interface Photo {
 }
 
 export type SortOrder = 'latest' | 'likes' | 'comments' | 'hot';
-export type PhotoFilter = 'all' | 'friends' | 'mine';
+export type PhotoFilter = 'all' | 'friends' | 'mine' | 'following';
 
 // 火热度计算函数 - 空实现，等待用户提供算法
 export const calculateHotness = (photo: Photo): number => {
@@ -36,6 +36,8 @@ export const usePhotos = (sortOrder: SortOrder = 'latest', filter: PhotoFilter =
   return useQuery({
     queryKey: ['photos', sortOrder, filter],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       let query = supabase
         .from('photos')
         .select(`
@@ -45,6 +47,42 @@ export const usePhotos = (sortOrder: SortOrder = 'latest', filter: PhotoFilter =
             avatar_url
           )
         `);
+
+      // Apply filters
+      if (filter === 'mine' && user) {
+        query = query.eq('photographer_id', user.id);
+      } else if (filter === 'friends' && user) {
+        // Get user's friends first
+        const { data: friendships } = await supabase
+          .from('friendships')
+          .select('friend_id, user_id')
+          .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+          .eq('status', 'accepted');
+
+        if (friendships && friendships.length > 0) {
+          const friendIds = friendships.map(f => 
+            f.user_id === user.id ? f.friend_id : f.user_id
+          );
+          query = query.in('photographer_id', friendIds);
+        } else {
+          // No friends, return empty result
+          return [];
+        }
+      } else if (filter === 'following' && user) {
+        // Get users that the current user is following
+        const { data: following } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+
+        if (following && following.length > 0) {
+          const followingIds = following.map(f => f.following_id);
+          query = query.in('photographer_id', followingIds);
+        } else {
+          // Not following anyone, return empty result
+          return [];
+        }
+      }
 
       // Apply initial sorting (except for comments and hot which need post-processing)
       switch (sortOrder) {
@@ -93,6 +131,29 @@ export const usePhotos = (sortOrder: SortOrder = 'latest', filter: PhotoFilter =
             hotness: calculateHotness(photo)
           }))
           .sort((a, b) => (b.hotness || 0) - (a.hotness || 0));
+      }
+
+      // For 'all' filter, prioritize followed users' posts
+      if (filter === 'all' && user) {
+        const { data: following } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+
+        if (following && following.length > 0) {
+          const followingIds = following.map(f => f.following_id);
+          
+          // Separate followed and non-followed posts
+          const followedPosts = processedData.filter(photo => 
+            followingIds.includes(photo.photographer_id)
+          );
+          const otherPosts = processedData.filter(photo => 
+            !followingIds.includes(photo.photographer_id)
+          );
+          
+          // Return followed posts first, then others
+          return [...followedPosts, ...otherPosts];
+        }
       }
 
       return processedData;

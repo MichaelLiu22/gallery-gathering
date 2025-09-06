@@ -43,6 +43,13 @@ const SortFilter = ({ sortOrder, filter, onSortChange, onFilterChange }: SortFil
           {user && (
             <>
               <Button
+                variant={filter === 'following' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onFilterChange('following')}
+              >
+                关注的人
+              </Button>
+              <Button
                 variant={filter === 'friends' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => onFilterChange('friends')}
