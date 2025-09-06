@@ -4,6 +4,7 @@ import { useProfile, useUpdateProfile } from '@/hooks/useProfiles';
 import { usePhotos } from '@/hooks/usePhotos';
 import { useFollowCounts } from '@/hooks/useFollows';
 import { useFriends } from '@/hooks/useFriends';
+import { useDeletePhoto } from '@/hooks/useDeletePhoto';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,8 +22,17 @@ import {
   Heart, 
   MessageCircle,
   UserPlus,
-  Users
+  Users,
+  Trash2,
+  MoreVertical
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import DeletePhotoDialog from '@/components/DeletePhotoDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,12 +43,15 @@ export default function Profile() {
   const { data: friends } = useFriends();
   const { data: followCounts } = useFollowCounts(user?.id || '');
   const { mutate: updateProfile, isPending } = useUpdateProfile();
+  const { mutate: deletePhoto, isPending: isDeleting } = useDeletePhoto();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [favoriteCamera, setFavoriteCamera] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [photoToDelete, setPhotoToDelete] = useState<any>(null);
   
   // Calculate user statistics
   const myPhotos = userPhotos || [];
@@ -46,7 +59,9 @@ export default function Profile() {
     ? myPhotos.reduce((max, photo) => (photo.likes_count || 0) > (max.likes_count || 0) ? photo : max)
     : null;
   
-  const totalScore = myPhotos.reduce((sum, photo) => sum + (photo.average_rating || 0), 0);
+  const averageRating = myPhotos.length > 0 
+    ? myPhotos.reduce((sum, photo) => sum + (photo.average_rating || 0), 0) / myPhotos.length
+    : 0;
   const totalViews = myPhotos.reduce((sum, photo) => sum + (photo.views_count || 0), 0);
   const totalLikes = myPhotos.reduce((sum, photo) => sum + (photo.likes_count || 0), 0);
   const totalComments = myPhotos.reduce((sum, photo) => sum + (photo.comments_count || 0), 0);
@@ -86,6 +101,33 @@ export default function Profile() {
         console.error('Profile update error:', error);
         toast({
           title: "更新失败",
+          description: "请稍后重试",
+          variant: "destructive",
+        });
+      }
+    });
+  };
+
+  const handleDeletePhoto = (photo: any) => {
+    setPhotoToDelete(photo);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!photoToDelete) return;
+    
+    deletePhoto(photoToDelete.id, {
+      onSuccess: () => {
+        toast({
+          title: "作品删除成功",
+          description: `作品 "${photoToDelete.title}" 已被删除`,
+        });
+        setShowDeleteDialog(false);
+        setPhotoToDelete(null);
+      },
+      onError: () => {
+        toast({
+          title: "删除失败",
           description: "请稍后重试",
           variant: "destructive",
         });
@@ -154,10 +196,10 @@ export default function Profile() {
                   <Badge variant="secondary">{totalComments}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">作品总分</span>
+                  <span className="text-sm text-muted-foreground">平均评分</span>
                   <Badge variant="outline" className="bg-gradient-to-r from-primary to-accent text-white">
                     <Star className="h-3 w-3 mr-1" />
-                    {totalScore.toFixed(1)}
+                    {averageRating.toFixed(1)}
                   </Badge>
                 </div>
               </CardContent>
@@ -198,13 +240,36 @@ export default function Profile() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <img
-                      src={(mostPopularPhoto as any).image_urls && (mostPopularPhoto as any).image_urls.length > 0 
-                        ? (mostPopularPhoto as any).image_urls[0] 
-                        : mostPopularPhoto.image_url}
-                      alt={mostPopularPhoto.title}
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
+                    <div className="relative">
+                      <img
+                        src={(mostPopularPhoto as any).image_urls && (mostPopularPhoto as any).image_urls.length > 0 
+                          ? (mostPopularPhoto as any).image_urls[0] 
+                          : mostPopularPhoto.image_url}
+                        alt={mostPopularPhoto.title}
+                        className="w-full h-32 object-cover rounded-lg cursor-pointer"
+                        onClick={() => navigate(`/photo/${mostPopularPhoto.id}`)}
+                      />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="absolute top-2 right-2"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleDeletePhoto(mostPopularPhoto)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            删除作品
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                     <div>
                       <h4 className="font-medium">{mostPopularPhoto.title}</h4>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
@@ -222,6 +287,71 @@ export default function Profile() {
                         </div>
                       </div>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 所有作品列表 */}
+            {myPhotos.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CameraIcon className="h-5 w-5" />
+                    我的作品 ({myPhotos.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {myPhotos.map((photo) => (
+                      <div key={photo.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                        <img
+                          src={(photo as any).image_urls && (photo as any).image_urls.length > 0 
+                            ? (photo as any).image_urls[0] 
+                            : photo.image_url}
+                          alt={photo.title}
+                          className="w-12 h-12 object-cover rounded cursor-pointer"
+                          onClick={() => navigate(`/photo/${photo.id}`)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h5 className="font-medium truncate cursor-pointer" onClick={() => navigate(`/photo/${photo.id}`)}>
+                            {photo.title}
+                          </h5>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Heart className="h-3 w-3" />
+                              {photo.likes_count || 0}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              {photo.views_count || 0}
+                            </span>
+                            {photo.average_rating && photo.average_rating > 0 && (
+                              <span className="flex items-center gap-1 text-primary">
+                                <Star className="h-3 w-3" />
+                                {photo.average_rating.toFixed(1)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleDeletePhoto(photo)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              删除作品
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -325,6 +455,14 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      <DeletePhotoDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        photoTitle={photoToDelete?.title || ''}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
