@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useUploadPhoto } from '@/hooks/useUploadPhoto';
-import { Upload, X, Camera } from 'lucide-react';
+import { Upload, X, Plus, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 
 const formSchema = z.object({
@@ -27,12 +27,11 @@ interface UploadPhotoDialogProps {
 }
 
 export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDialogProps) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [exposureData, setExposureData] = useState<any>(null);
-  const [isExtracting, setIsExtracting] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [exposureData, setExposureData] = useState<any>({});
 
-  const uploadMutation = useUploadPhoto();
+  const { mutate: uploadPhoto, isPending: isUploading } = useUploadPhoto();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -43,242 +42,292 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
     },
   });
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
-
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('文件大小不能超过10MB');
-      return;
-    }
-
-    setSelectedFile(file);
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const newFiles = acceptedFiles.slice(0, 9 - selectedFiles.length); // Limit to 9 total images
     
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = () => setPreview(reader.result as string);
-    reader.readAsDataURL(file);
+    if (newFiles.length === 0) return;
 
-    // Extract EXIF data
-    setIsExtracting(true);
-    try {
-      const exifData = await exifr.parse(file);
-      if (exifData) {
-        setExposureData({
-          iso: exifData.ISO,
-          aperture: exifData.FNumber ? `f/${exifData.FNumber}` : undefined,
-          shutter_speed: exifData.ExposureTime ? `1/${Math.round(1/exifData.ExposureTime)}` : undefined,
-          focal_length: exifData.FocalLength ? `${exifData.FocalLength}mm` : undefined,
-        });
-        
-        // Auto-fill camera equipment if available
-        if (exifData.Make && exifData.Model) {
-          form.setValue('camera_equipment', `${exifData.Make} ${exifData.Model}`);
+    const updatedFiles = [...selectedFiles, ...newFiles];
+    setSelectedFiles(updatedFiles);
+
+    // Create previews
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    setPreviews(prev => [...prev, ...newPreviews]);
+
+    // Extract EXIF data from first image if this is the first upload
+    if (selectedFiles.length === 0 && newFiles[0]) {
+      const firstFile = newFiles[0];
+      exifr.parse(firstFile).then((exifData: any) => {
+        if (exifData) {
+          const make = exifData.Make || '';
+          const model = exifData.Model || '';
+          const camera = `${make} ${model}`.trim();
+          
+          if (camera) {
+            form.setValue('camera_equipment', camera);
+          }
+
+          setExposureData({
+            iso: exifData.ISO,
+            aperture: exifData.FNumber ? `f/${exifData.FNumber}` : undefined,
+            shutter_speed: exifData.ExposureTime ? `1/${Math.round(1 / exifData.ExposureTime)}` : undefined,
+            focal_length: exifData.FocalLength ? `${exifData.FocalLength}mm` : undefined,
+          });
         }
-      }
-    } catch (error) {
-      console.log('No EXIF data found');
-    } finally {
-      setIsExtracting(false);
+      }).catch(console.error);
     }
-  }, [form]);
+  }, [form, selectedFiles]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.webp']
+      'image/*': ['.jpeg', '.jpg', '.png', '.webp', '.heic']
     },
-    multiple: false,
+    multiple: true,
+    maxSize: 10 * 1024 * 1024 // 10MB per file
   });
 
-  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!selectedFile) {
-      toast.error('请选择图片文件');
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    if (selectedFiles.length === 0) {
+      toast.error('请先选择图片');
       return;
     }
 
-    await uploadMutation.mutateAsync({
+    uploadPhoto({
       title: values.title,
       description: values.description,
       camera_equipment: values.camera_equipment,
       visibility: values.visibility,
-      file: selectedFile,
+      files: selectedFiles,
       exposure_settings: exposureData,
+    }, {
+      onSuccess: () => {
+        handleClose();
+      }
     });
-
-    // Reset form and close dialog
-    form.reset();
-    setSelectedFile(null);
-    setPreview(null);
-    setExposureData(null);
-    onOpenChange(false);
   };
 
-  const removeFile = () => {
-    setSelectedFile(null);
-    setPreview(null);
-    setExposureData(null);
+  const removeFile = (index: number) => {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    const newPreviews = previews.filter((_, i) => i !== index);
+    
+    // Revoke the URL for the removed preview
+    if (previews[index]) {
+      URL.revokeObjectURL(previews[index]);
+    }
+    
+    setSelectedFiles(newFiles);
+    setPreviews(newPreviews);
+    
+    // Clear EXIF data if removing the first image
+    if (index === 0) {
+      setExposureData({});
+      form.setValue('camera_equipment', '');
+    }
+  };
+  
+  const removeAllFiles = () => {
+    previews.forEach(preview => URL.revokeObjectURL(preview));
+    setSelectedFiles([]);
+    setPreviews([]);
+    setExposureData({});
     form.setValue('camera_equipment', '');
   };
+
+  const handleClose = () => {
+    onOpenChange(false);
+    form.reset();
+    removeAllFiles();
+  };
+
+  useEffect(() => {
+    return () => {
+      previews.forEach(preview => URL.revokeObjectURL(preview));
+    };
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Camera className="h-5 w-5" />
-            上传作品
-          </DialogTitle>
+          <DialogTitle>发布作品</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {!selectedFile ? (
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-                ${isDragActive 
-                  ? 'border-primary bg-primary/5' 
-                  : 'border-muted-foreground/25 hover:border-primary/50'
-                }`}
-            >
-              <input {...getInputProps()} />
-              <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-lg font-medium mb-2">
-                {isDragActive ? '放开文件即可上传' : '点击或拖拽图片到此处'}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                支持 JPEG、PNG、WebP 格式，最大 10MB
-              </p>
-            </div>
-          ) : (
+        {selectedFiles.length === 0 ? (
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
+              isDragActive 
+                ? 'border-primary bg-primary/5' 
+                : 'border-muted-foreground/25 hover:border-primary/50'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <Upload className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-lg font-medium mb-2">
+              {isDragActive ? '放开文件即可上传' : '点击或拖拽图片到此处'}
+            </p>
+            <p className="text-center text-muted-foreground">
+              拖拽图片到此处，或点击选择文件
+            </p>
+            <p className="text-center text-sm text-muted-foreground mt-2">
+              支持 JPEG、PNG、WebP 格式，单个文件最大 10MB，最多9张图片
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Image Previews */}
             <div className="space-y-4">
-              <div className="relative">
-                <img
-                  src={preview!}
-                  alt="Preview"
-                  className="w-full h-64 object-cover rounded-lg"
-                />
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  已选择 {selectedFiles.length} 张图片 (最多9张)
+                </span>
                 <Button
                   type="button"
-                  variant="destructive"
+                  variant="outline"
                   size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={removeFile}
+                  onClick={removeAllFiles}
                 >
-                  <X className="h-4 w-4" />
+                  清空所有
                 </Button>
               </div>
-
-              {isExtracting && (
-                <p className="text-sm text-muted-foreground">正在读取照片信息...</p>
-              )}
-
-              {exposureData && (
-                <div className="bg-muted/50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">拍摄参数</h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    {exposureData.iso && <span>ISO: {exposureData.iso}</span>}
-                    {exposureData.aperture && <span>光圈: {exposureData.aperture}</span>}
-                    {exposureData.shutter_speed && <span>快门: {exposureData.shutter_speed}s</span>}
-                    {exposureData.focal_length && <span>焦距: {exposureData.focal_length}</span>}
-                  </div>
-                </div>
-              )}
-
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>作品标题 *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="为你的作品起个标题..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>作品描述</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="描述一下这张照片的故事..." 
-                            className="min-h-[100px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="camera_equipment"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>相机设备</FormLabel>
-                        <FormControl>
-                          <Input placeholder="例如: Canon EOS R5" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="visibility"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>可见性</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="选择可见性" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="public">公开 - 所有人可见</SelectItem>
-                            <SelectItem value="friends">朋友 - 仅朋友可见</SelectItem>
-                            <SelectItem value="private">私密 - 仅自己可见</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="flex justify-end gap-3 pt-4">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => onOpenChange(false)}
-                      disabled={uploadMutation.isPending}
+              
+              <div className="grid grid-cols-3 gap-3">
+                {previews.map((preview, index) => (
+                  <div key={index} className="relative aspect-square">
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                      onClick={() => removeFile(index)}
                     >
-                      取消
+                      <X className="h-3 w-3" />
                     </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={uploadMutation.isPending}
-                      className="min-w-[100px]"
-                    >
-                      {uploadMutation.isPending ? '上传中...' : '发布作品'}
-                    </Button>
+                    <div className="absolute bottom-1 left-1 bg-black/50 text-white text-xs px-1 rounded">
+                      {index + 1}
+                    </div>
                   </div>
-                </form>
-              </Form>
+                ))}
+                
+                {/* Add more button */}
+                {selectedFiles.length < 9 && (
+                  <div
+                    {...getRootProps()}
+                    className="aspect-square border-2 border-dashed border-border rounded-lg flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                  >
+                    <input {...getInputProps()} />
+                    <Plus className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* EXIF data display */}
+            {Object.keys(exposureData).length > 0 && (
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Camera className="h-4 w-4" />
+                  拍摄参数
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {exposureData.iso && <span>ISO: {exposureData.iso}</span>}
+                  {exposureData.aperture && <span>光圈: {exposureData.aperture}</span>}
+                  {exposureData.shutter_speed && <span>快门: {exposureData.shutter_speed}s</span>}
+                  {exposureData.focal_length && <span>焦距: {exposureData.focal_length}</span>}
+                </div>
+              </div>
+            )}
+
+            {/* Form */}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>作品标题 *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="为你的作品起个标题..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>作品描述</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="描述一下这张照片的故事..." 
+                          className="min-h-[100px]"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="camera_equipment"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>相机设备</FormLabel>
+                      <FormControl>
+                        <Input placeholder="例如: Canon EOS R5" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="visibility"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>可见性</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="选择可见性" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="public">公开 - 所有人可见</SelectItem>
+                          <SelectItem value="friends">朋友 - 仅朋友可见</SelectItem>
+                          <SelectItem value="private">私密 - 仅自己可见</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="outline" onClick={handleClose}>
+                    取消
+                  </Button>
+                  <Button type="submit" disabled={isUploading}>
+                    {isUploading ? '发布中...' : '发布作品'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

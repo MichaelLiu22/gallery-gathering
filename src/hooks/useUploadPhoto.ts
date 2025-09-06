@@ -7,7 +7,7 @@ export interface UploadPhotoData {
   description?: string;
   camera_equipment?: string;
   visibility: 'public' | 'friends' | 'private';
-  file: File;
+  files: File[]; // Changed from single file to array
   exposure_settings?: {
     iso?: number;
     aperture?: string;
@@ -26,34 +26,42 @@ export const useUploadPhoto = () => {
         throw new Error('User not authenticated');
       }
 
-      // Generate unique filename
-      const fileExt = data.file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      // Upload all files and collect URLs
+      const imageUrls: string[] = [];
+      
+      for (let i = 0; i < data.files.length; i++) {
+        const file = data.files[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}_${i}.${fileExt}`;
 
-      // Upload file to storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('photos')
-        .upload(fileName, data.file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+        // Upload file to storage
+        const { error: uploadError } = await supabase.storage
+          .from('photos')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
-      if (uploadError) {
-        throw uploadError;
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('photos')
+          .getPublicUrl(fileName);
+
+        imageUrls.push(urlData.publicUrl);
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('photos')
-        .getPublicUrl(fileName);
-
-      // Insert photo record
+      // Insert photo record with image array
       const { data: photo, error: dbError } = await supabase
         .from('photos')
         .insert({
           title: data.title,
           description: data.description,
-          image_url: urlData.publicUrl,
+          image_url: imageUrls[0], // Keep the first image for backward compatibility
+          image_urls: imageUrls, // New field for gallery support
           camera_equipment: data.camera_equipment,
           exposure_settings: data.exposure_settings,
           visibility: data.visibility,
@@ -68,9 +76,10 @@ export const useUploadPhoto = () => {
 
       return photo;
     },
-    onSuccess: () => {
+    onSuccess: (photo) => {
       queryClient.invalidateQueries({ queryKey: ['photos'] });
-      toast.success('作品上传成功！');
+      const imageCount = Array.isArray(photo.image_urls) ? photo.image_urls.length : 1;
+      toast.success(`作品发布成功！${imageCount > 1 ? `共${imageCount}张图片` : ''}`);
     },
     onError: (error: any) => {
       console.error('Upload error:', error);
