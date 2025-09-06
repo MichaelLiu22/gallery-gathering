@@ -24,13 +24,17 @@ import {
   Images,
   ChevronLeft,
   ChevronRight,
-  ZoomIn
+  ZoomIn,
+  Trash2
 } from 'lucide-react';
 import UploadPhotoDialog from './UploadPhotoDialog';
 import PhotoComments from './PhotoComments';
 import PhotoRating from './PhotoRating';
 import SortFilter from './SortFilter';
 import ImageZoom from './ImageZoom';
+import NotificationBadge from './NotificationBadge';
+import FriendManagement from './FriendManagement';
+import { useDeletePhoto } from '@/hooks/useDeletePhoto';
 
 export default function PhotoGrid() {
   const [selectedPhoto, setSelectedPhoto] = useState<any>(null);
@@ -100,6 +104,8 @@ export default function PhotoGrid() {
                 <span className="text-sm text-muted-foreground hidden sm:inline">
                   欢迎, {userProfile?.display_name || user.email}
                 </span>
+                <NotificationBadge />
+                <FriendManagement />
                 <Button variant="ghost" size="sm" onClick={handleProfileClick}>
                   <User className="h-4 w-4 mr-2" />
                   个人资料
@@ -375,10 +381,21 @@ interface PhotoActionsProps {
 function PhotoActions({ photo }: PhotoActionsProps) {
   const { user } = useAuth();
   const { likesCount, userHasLiked, toggleLike, isToggling } = useLikes(photo.id);
+  const { mutate: deletePhoto, isPending: isDeleting } = useDeletePhoto();
+  
+  const isOwner = user?.id === photo.photographer_id;
 
   const handleLike = () => {
     if (!user) return;
     toggleLike();
+  };
+
+  const handleDelete = () => {
+    if (!isOwner) return;
+    
+    if (window.confirm('确定要删除这个作品吗？此操作不可恢复。')) {
+      deletePhoto(photo.id);
+    }
   };
 
   return (
@@ -401,9 +418,22 @@ function PhotoActions({ photo }: PhotoActionsProps) {
           <span className="text-sm">评论</span>
         </div>
       </div>
-      <div className="flex items-center space-x-1 text-muted-foreground">
-        <Eye className="h-4 w-4" />
-        <span className="text-sm">{photo.views_count || 0} 次浏览</span>
+      <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 text-muted-foreground">
+          <Eye className="h-4 w-4" />
+          <span className="text-sm">{photo.views_count || 0} 次浏览</span>
+        </div>
+        {isOwner && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );

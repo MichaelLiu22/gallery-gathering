@@ -90,7 +90,12 @@ export default function ImageZoom({ src, alt, onClose }: ImageZoomProps) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
+    <div 
+      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       {/* Controls */}
       <div className="absolute top-4 right-4 flex gap-2 z-10">
         <Button
@@ -98,6 +103,7 @@ export default function ImageZoom({ src, alt, onClose }: ImageZoomProps) {
           size="icon"
           onClick={handleZoomOut}
           disabled={scale <= 0.5}
+          className="bg-black/70 text-white hover:bg-black/80"
         >
           <ZoomOut className="h-4 w-4" />
         </Button>
@@ -106,6 +112,7 @@ export default function ImageZoom({ src, alt, onClose }: ImageZoomProps) {
           size="icon"
           onClick={handleZoomIn}
           disabled={scale >= 5}
+          className="bg-black/70 text-white hover:bg-black/80"
         >
           <ZoomIn className="h-4 w-4" />
         </Button>
@@ -113,6 +120,7 @@ export default function ImageZoom({ src, alt, onClose }: ImageZoomProps) {
           variant="secondary"
           size="icon"
           onClick={handleReset}
+          className="bg-black/70 text-white hover:bg-black/80"
         >
           <RotateCcw className="h-4 w-4" />
         </Button>
@@ -120,20 +128,21 @@ export default function ImageZoom({ src, alt, onClose }: ImageZoomProps) {
           variant="secondary"
           size="icon"
           onClick={onClose}
+          className="bg-black/70 text-white hover:bg-black/80"
         >
           <X className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Scale indicator */}
-      <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded text-sm">
+      <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded text-sm">
         {Math.round(scale * 100)}%
       </div>
 
       {/* Image container */}
       <div
         ref={containerRef}
-        className="w-full h-full flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing"
+        className="relative flex items-center justify-center max-w-[90vw] max-h-[90vh]"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -144,18 +153,24 @@ export default function ImageZoom({ src, alt, onClose }: ImageZoomProps) {
           ref={imageRef}
           src={src}
           alt={alt}
-          className="max-w-none transition-transform duration-100 select-none"
+          className="max-w-full max-h-full object-contain transition-transform duration-100 select-none"
           style={{
             transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-            cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+            cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in',
           }}
           draggable={false}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (scale === 1) {
+              handleZoomIn();
+            }
+          }}
         />
       </div>
 
       {/* Instructions */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded text-sm">
-        滚轮缩放 • 拖拽移动 • ESC退出
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded text-sm">
+        滚轮缩放 • 拖拽移动 • 点击图片放大 • ESC退出
       </div>
     </div>
   );
