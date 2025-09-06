@@ -201,7 +201,9 @@ export type Database = {
           description: string | null
           exposure_settings: Json | null
           id: number
+          image_count: number | null
           image_url: string
+          image_urls: Json | null
           likes_count: number
           photographer_id: string
           ratings_count: number | null
@@ -217,7 +219,9 @@ export type Database = {
           description?: string | null
           exposure_settings?: Json | null
           id?: never
+          image_count?: number | null
           image_url: string
+          image_urls?: Json | null
           likes_count?: number
           photographer_id: string
           ratings_count?: number | null
@@ -233,7 +237,9 @@ export type Database = {
           description?: string | null
           exposure_settings?: Json | null
           id?: never
+          image_count?: number | null
           image_url?: string
+          image_urls?: Json | null
           likes_count?: number
           photographer_id?: string
           ratings_count?: number | null
