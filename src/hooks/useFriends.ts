@@ -42,11 +42,7 @@ export const useFriends = () => {
         .from('friendships')
         .select(`
           *,
-          friend_profile:profiles!friend_id (
-            display_name,
-            avatar_url,
-            user_id
-          )
+          friend_profile:profiles(display_name, avatar_url, user_id)
         `)
         .eq('status', 'accepted')
         .eq('user_id', user.user.id);
@@ -61,10 +57,10 @@ export const useFriends = () => {
           
           return {
             ...friendship,
-            friend_profile: {
-              ...friendship.friend_profile,
+            friend_profile: friendship.friend_profile ? {
+              ...(friendship.friend_profile as any),
               photo_score: photoScore || 0
-            }
+            } : null
           };
         })
       );
