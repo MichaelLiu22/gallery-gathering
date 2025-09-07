@@ -32,9 +32,14 @@ export const calculateHotness = (photo: Photo): number => {
   return photo.likes_count * 2 + photo.views_count * 0.1;
 };
 
-export const usePhotos = (sortOrder: SortOrder = 'latest', filter: PhotoFilter = 'all') => {
+export const usePhotos = (
+  sortOrder: SortOrder = 'latest', 
+  filter: PhotoFilter = 'all',
+  page: number = 1,
+  limit: number = 8
+) => {
   return useQuery({
-    queryKey: ['photos', sortOrder, filter],
+    queryKey: ['photos', sortOrder, filter, page, limit],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -94,6 +99,11 @@ export const usePhotos = (sortOrder: SortOrder = 'latest', filter: PhotoFilter =
           query = query.order('created_at', { ascending: false });
           break;
       }
+
+      // Apply pagination
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      query = query.range(from, to);
 
       const { data, error } = await query;
 
@@ -158,5 +168,63 @@ export const usePhotos = (sortOrder: SortOrder = 'latest', filter: PhotoFilter =
 
       return processedData;
     },
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
+};
+
+// Hook for getting total count of photos (for pagination)
+export const usePhotosCount = (filter: PhotoFilter = 'all') => {
+  return useQuery({
+    queryKey: ['photos-count', filter],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let query = supabase
+        .from('photos')
+        .select('*', { count: 'exact', head: true });
+
+      // Apply same filters as usePhotos
+      if (filter === 'mine' && user) {
+        query = query.eq('photographer_id', user.id);
+      } else if (filter === 'friends' && user) {
+        const { data: friendships } = await supabase
+          .from('friendships')
+          .select('friend_id, user_id')
+          .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+          .eq('status', 'accepted');
+
+        if (friendships && friendships.length > 0) {
+          const friendIds = friendships.map(f => 
+            f.user_id === user.id ? f.friend_id : f.user_id
+          );
+          query = query.in('photographer_id', friendIds);
+        } else {
+          return 0;
+        }
+      } else if (filter === 'following' && user) {
+        const { data: following } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+
+        if (following && following.length > 0) {
+          const followingIds = following.map(f => f.following_id);
+          query = query.in('photographer_id', followingIds);
+        } else {
+          return 0;
+        }
+      }
+
+      const { count, error } = await query;
+      
+      if (error) {
+        console.error('Error getting photos count:', error);
+        return 0;
+      }
+      
+      return count || 0;
+    },
+    retry: 2,
   });
 };

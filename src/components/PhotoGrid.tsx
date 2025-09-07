@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { usePhotos, SortOrder, PhotoFilter } from '@/hooks/usePhotos';
+import { usePhotos, usePhotosCount, SortOrder, PhotoFilter } from '@/hooks/usePhotos';
 import { useFriends } from '@/hooks/useFriends';
 import { useLikes } from '@/hooks/useLikes';
 import { useProfile } from '@/hooks/useProfiles';
@@ -18,7 +18,9 @@ import {
   Camera,
   Eye,
   Images,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import UploadPhotoDialog from './UploadPhotoDialog';
 import SortFilter from './SortFilter';
@@ -30,17 +32,36 @@ export default function PhotoGrid() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState<SortOrder>('latest');
   const [filter, setFilter] = useState<PhotoFilter>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const photosPerPage = 8;
 
   const { user, signOut } = useAuth();
   const { data: userProfile } = useProfile();
   const { data: friends } = useFriends();
-  const { data: photos, isLoading, error } = usePhotos(sortOrder, filter);
+  const { data: photos, isLoading, error } = usePhotos(sortOrder, filter, currentPage, photosPerPage);
+  const { data: totalCount } = usePhotosCount(filter);
 
   const filteredPhotos = photos || [];
+  const totalPages = Math.ceil((totalCount || 0) / photosPerPage);
 
   const handleSignOut = async () => {
     await signOut();
     window.location.href = '/';
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleFilterChange = (newFilter: PhotoFilter) => {
+    setFilter(newFilter);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const handleSortChange = (newSort: SortOrder) => {
+    setSortOrder(newSort);
+    setCurrentPage(1); // Reset to first page when sort changes
   };
 
   const handleProfileClick = () => {
@@ -56,7 +77,9 @@ export default function PhotoGrid() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">加载作品中...</p>
+          <p className="text-muted-foreground">
+            {currentPage > 1 ? `加载第 ${currentPage} 页...` : '加载作品中...'}
+          </p>
         </div>
       </div>
     );
@@ -66,8 +89,22 @@ export default function PhotoGrid() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">加载失败</h2>
-          <p className="text-muted-foreground">请刷新页面重试</p>
+          <Camera className="h-16 w-16 text-muted-foreground mb-4 mx-auto" />
+          <h2 className="text-2xl font-bold mb-2">网络连接问题</h2>
+          <p className="text-muted-foreground mb-4">
+            无法加载作品，请检查网络连接
+          </p>
+          <div className="space-y-2">
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline"
+            >
+              刷新页面
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              如果问题持续存在，请稍后再试
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -130,9 +167,21 @@ export default function PhotoGrid() {
         <SortFilter 
           sortOrder={sortOrder}
           filter={filter}
-          onSortChange={setSortOrder}
-          onFilterChange={setFilter}
+          onSortChange={handleSortChange}
+          onFilterChange={handleFilterChange}
         />
+
+        {/* Pagination Info */}
+        {totalCount > 0 && (
+          <div className="flex justify-between items-center mb-6">
+            <p className="text-sm text-muted-foreground">
+              共 {totalCount} 个作品，第 {currentPage} / {totalPages} 页
+            </p>
+            <div className="text-sm text-muted-foreground">
+              每页显示 {photosPerPage} 个作品
+            </div>
+          </div>
+        )}
 
         {filteredPhotos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -147,17 +196,73 @@ export default function PhotoGrid() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredPhotos.map((photo) => (
-              <PhotoCard 
-                key={photo.id} 
-                photo={photo} 
-                onClick={() => {
-                  window.location.href = `/photo/${photo.id}`;
-                }}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredPhotos.map((photo) => (
+                <PhotoCard 
+                  key={photo.id} 
+                  photo={photo} 
+                  onClick={() => {
+                    window.location.href = `/photo/${photo.id}`;
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center space-x-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="flex items-center space-x-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span>上一页</span>
+                </Button>
+
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center space-x-1"
+                >
+                  <span>下一页</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </main>
 
