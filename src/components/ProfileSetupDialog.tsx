@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateProfile } from '@/hooks/useProfiles';
+import { checkDisplayNameAvailability, validateDisplayName } from '@/hooks/useDisplayNameValidation';
 import { toast } from 'sonner';
-import { Camera } from 'lucide-react';
+import { Camera, Check, X, Loader2 } from 'lucide-react';
 
 interface ProfileSetupDialogProps {
   open: boolean;
@@ -18,13 +19,51 @@ export default function ProfileSetupDialog({ open, onOpenChange, onSuccess }: Pr
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [favoriteCamera, setFavoriteCamera] = useState('');
+  const [isCheckingName, setIsCheckingName] = useState(false);
+  const [nameValidation, setNameValidation] = useState<{ valid: boolean; message?: string; available?: boolean }>({
+    valid: true
+  });
+  
   const { mutate: createProfile, isPending } = useCreateProfile();
+
+  // Debounce display name validation
+  useEffect(() => {
+    if (!displayName.trim()) {
+      setNameValidation({ valid: true });
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      const validation = validateDisplayName(displayName);
+      
+      if (!validation.valid) {
+        setNameValidation(validation);
+        return;
+      }
+
+      setIsCheckingName(true);
+      const isAvailable = await checkDisplayNameAvailability(displayName);
+      setNameValidation({
+        valid: isAvailable,
+        available: isAvailable,
+        message: isAvailable ? '昵称可用' : '昵称已被使用，请选择其他名称'
+      });
+      setIsCheckingName(false);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [displayName]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!displayName.trim()) {
       toast.error('显示名称不能为空');
+      return;
+    }
+
+    if (!nameValidation.valid || !nameValidation.available) {
+      toast.error(nameValidation.message || '请检查昵称是否可用');
       return;
     }
 
@@ -40,7 +79,11 @@ export default function ProfileSetupDialog({ open, onOpenChange, onSuccess }: Pr
       },
       onError: (error: any) => {
         console.error('Profile creation error:', error);
-        toast.error(error.message || '设置失败，请重试');
+        if (error.message?.includes('unique_display_name')) {
+          toast.error('昵称已被使用，请选择其他名称');
+        } else {
+          toast.error(error.message || '设置失败，请重试');
+        }
       },
     });
   };
@@ -70,16 +113,38 @@ export default function ProfileSetupDialog({ open, onOpenChange, onSuccess }: Pr
               <Label htmlFor="displayName">
                 显示名称 <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="displayName"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="请输入您的显示名称"
-                maxLength={50}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="displayName"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="请输入您的显示名称"
+                  maxLength={20}
+                  required
+                  className={`pr-8 ${
+                    displayName && !nameValidation.valid ? 'border-destructive' : 
+                    displayName && nameValidation.available ? 'border-green-500' : ''
+                  }`}
+                />
+                <div className="absolute right-2 top-2.5">
+                  {isCheckingName && displayName ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : displayName && nameValidation.valid && nameValidation.available ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : displayName && !nameValidation.valid ? (
+                    <X className="h-4 w-4 text-destructive" />
+                  ) : null}
+                </div>
+              </div>
+              {displayName && nameValidation.message && (
+                <p className={`text-xs ${
+                  nameValidation.available ? 'text-green-600' : 'text-destructive'
+                }`}>
+                  {nameValidation.message}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
-                {displayName.length}/50
+                {displayName.length}/20 • 昵称唯一且不可修改
               </p>
             </div>
 
@@ -122,7 +187,7 @@ export default function ProfileSetupDialog({ open, onOpenChange, onSuccess }: Pr
               <Button
                 type="submit"
                 className="flex-1"
-                disabled={isPending || !displayName.trim()}
+                disabled={isPending || !displayName.trim() || !nameValidation.valid || !nameValidation.available || isCheckingName}
               >
                 {isPending ? '设置中...' : '完成设置'}
               </Button>

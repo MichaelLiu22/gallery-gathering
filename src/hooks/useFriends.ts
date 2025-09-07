@@ -35,19 +35,41 @@ export const useFriends = () => {
   return useQuery({
     queryKey: ['friends'],
     queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user?.id) throw new Error('Not authenticated');
+
       const { data, error } = await supabase
         .from('friendships')
         .select(`
           *,
           friend_profile:profiles!friend_id (
             display_name,
-            avatar_url
+            avatar_url,
+            user_id
           )
         `)
-        .eq('status', 'accepted');
+        .eq('status', 'accepted')
+        .eq('user_id', user.user.id);
 
       if (error) throw error;
-      return data;
+
+      // Get photo scores for each friend
+      const friendsWithScores = await Promise.all(
+        (data || []).map(async (friendship) => {
+          const { data: photoScore } = await supabase
+            .rpc('get_user_photo_score', { user_uuid: friendship.friend_id });
+          
+          return {
+            ...friendship,
+            friend_profile: {
+              ...friendship.friend_profile,
+              photo_score: photoScore || 0
+            }
+          };
+        })
+      );
+
+      return friendsWithScores;
     },
   });
 };

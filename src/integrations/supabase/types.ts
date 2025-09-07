@@ -427,17 +427,7 @@ export type Database = {
       }
     }
     Views: {
-      unique_friends: {
-        Row: {
-          created_at: string | null
-          friend_id: string | null
-          requester_id: string | null
-          status: string | null
-          user1_id: string | null
-          user2_id: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       get_user_photo_score: {

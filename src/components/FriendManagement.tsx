@@ -41,21 +41,67 @@ export default function FriendManagement() {
     
     setIsSearching(true);
     try {
-      // Find user by email
+      // Find user by display name
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('user_id')
+        .select('user_id, display_name')
         .ilike('display_name', `%${searchEmail}%`)
         .limit(1);
 
       if (error) throw error;
       
       if (profiles && profiles.length > 0) {
-        sendFriendRequest(profiles[0].user_id, {
+        const targetUserId = profiles[0].user_id;
+        
+        // Check if already friends
+        const { data: existingFriendship } = await supabase
+          .from('friendships')
+          .select('id')
+          .or(`and(user_id.eq.${user?.id},friend_id.eq.${targetUserId}),and(user_id.eq.${targetUserId},friend_id.eq.${user?.id})`)
+          .eq('status', 'accepted')
+          .maybeSingle();
+
+        if (existingFriendship) {
+          toast({
+            title: "已经是好友",
+            description: "您已经和该用户是好友了",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Check if friend request already sent
+        const { data: existingRequest } = await supabase
+          .from('friend_requests')
+          .select('id')
+          .or(`and(sender_id.eq.${user?.id},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${user?.id})`)
+          .eq('status', 'pending')
+          .maybeSingle();
+
+        if (existingRequest) {
+          toast({
+            title: "请求已存在",
+            description: "已经有待处理的好友请求",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Check if trying to add self
+        if (targetUserId === user?.id) {
+          toast({
+            title: "不能添加自己",
+            description: "不能添加自己为好友",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        sendFriendRequest(targetUserId, {
           onSuccess: () => {
             toast({
               title: "好友请求已发送",
-              description: "等待对方同意",
+              description: `已向 "${profiles[0].display_name}" 发送好友请求`,
             });
             setSearchEmail('');
           },
@@ -137,11 +183,19 @@ export default function FriendManagement() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <Avatar>
-                              <AvatarFallback>U</AvatarFallback>
+                              <AvatarImage src={friend.friend_profile?.avatar_url} />
+                              <AvatarFallback>
+                                {friend.friend_profile?.display_name?.[0]?.toUpperCase() || 'U'}
+                              </AvatarFallback>
                             </Avatar>
                             <div>
-                              <h4 className="font-medium">好友用户</h4>
+                              <h4 className="font-medium">
+                                {friend.friend_profile?.display_name || '未知用户'}
+                              </h4>
                               <p className="text-sm text-muted-foreground">
+                                摄影总分: {friend.friend_profile?.photo_score?.toFixed(2) || '0.00'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
                                 {new Date(friend.created_at).toLocaleDateString('zh-CN')} 成为好友
                               </p>
                             </div>
@@ -177,10 +231,15 @@ export default function FriendManagement() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <Avatar>
-                                  <AvatarFallback>U</AvatarFallback>
+                                  <AvatarImage src={request.sender_profile?.avatar_url} />
+                                  <AvatarFallback>
+                                    {request.sender_profile?.display_name?.[0]?.toUpperCase() || 'U'}
+                                  </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <h4 className="font-medium">发送请求的用户</h4>
+                                  <h4 className="font-medium">
+                                    {request.sender_profile?.display_name || '未知用户'}
+                                  </h4>
                                   <p className="text-sm text-muted-foreground">
                                     {new Date(request.created_at).toLocaleDateString('zh-CN')} 发送请求
                                   </p>
@@ -223,10 +282,15 @@ export default function FriendManagement() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <Avatar>
-                                  <AvatarFallback>U</AvatarFallback>
+                                  <AvatarImage src={request.receiver_profile?.avatar_url} />
+                                  <AvatarFallback>
+                                    {request.receiver_profile?.display_name?.[0]?.toUpperCase() || 'U'}
+                                  </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <h4 className="font-medium">接收请求的用户</h4>
+                                  <h4 className="font-medium">
+                                    {request.receiver_profile?.display_name || '未知用户'}
+                                  </h4>
                                   <p className="text-sm text-muted-foreground">
                                     {new Date(request.created_at).toLocaleDateString('zh-CN')} 发送
                                   </p>
