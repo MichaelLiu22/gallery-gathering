@@ -300,189 +300,201 @@ export default function PhotoView() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* 移动端和桌面端不同的布局 */}
+        <div className="space-y-6">
           {/* Image Display */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardContent className="p-0">
-                <div className="relative bg-background rounded-lg overflow-hidden">
-                  <img
-                    src={currentImage}
-                    alt={photo.title}
-                    className="w-full max-h-[70vh] object-cover cursor-pointer"
-                    style={{
-                      transform: `scale(${imageZoom}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
-                      transformOrigin: 'center center'
-                    }}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onClick={() => {
-                      // 点击图片跳转到新页面全屏展示
-                      window.open(`/photo-fullscreen?src=${encodeURIComponent(currentImage)}&alt=${encodeURIComponent(photo.title)}`, '_blank');
-                    }}
-                    draggable={false}
-                  />
-                  
-                  {/* Image Controls */}
-                  <div className="absolute top-4 right-4 flex flex-col gap-2">
-                    <Button variant="secondary" size="sm" onClick={() => handleImageZoom(0.2)}>
-                      <ZoomIn className="h-4 w-4" />
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={() => handleImageZoom(-0.2)}>
-                      <ZoomOut className="h-4 w-4" />
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={resetImageView}>
-                      <RotateCw className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  {/* Navigation for multiple images */}
-                  {imageUrls.length > 1 && (
-                    <>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="absolute left-4 top-1/2 -translate-y-1/2"
-                        onClick={() => setCurrentImageIndex(prev => 
-                          prev === 0 ? imageUrls.length - 1 : prev - 1
-                        )}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="absolute right-16 top-1/2 -translate-y-1/2"
-                        onClick={() => setCurrentImageIndex(prev => 
-                          prev === imageUrls.length - 1 ? 0 : prev + 1
-                        )}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                      
-                      <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded text-sm">
-                        {currentImageIndex + 1} / {imageUrls.length}
-                      </div>
-                    </>
-                  )}
+          <Card>
+            <CardContent className="p-0">
+              <div className="relative bg-background rounded-lg overflow-hidden">
+                <img
+                  src={currentImage}
+                  alt={photo.title}
+                  className="w-full max-h-[70vh] object-cover cursor-pointer"
+                  style={{
+                    transform: `scale(${imageZoom}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
+                    transformOrigin: 'center center'
+                  }}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onClick={() => {
+                    // 点击图片跳转到新页面全屏展示
+                    window.open(`/photo-fullscreen?src=${encodeURIComponent(currentImage)}&alt=${encodeURIComponent(photo.title)}`, '_blank');
+                  }}
+                  draggable={false}
+                />
+                
+                {/* Image Controls */}
+                <div className="absolute top-4 right-4 flex flex-col gap-2">
+                  <Button variant="secondary" size="sm" onClick={() => handleImageZoom(0.2)}>
+                    <ZoomIn className="h-4 w-4" />
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => handleImageZoom(-0.2)}>
+                    <ZoomOut className="h-4 w-4" />
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={resetImageView}>
+                    <RotateCw className="h-4 w-4" />
+                  </Button>
                 </div>
                 
-                {/* Thumbnail navigation */}
+                {/* Navigation for multiple images */}
                 {imageUrls.length > 1 && (
-                  <div className="p-4 flex gap-2 overflow-x-auto">
-                    {imageUrls.map((url, index) => (
-                      <img
-                        key={index}
-                        src={url}
-                        alt={`${photo.title} ${index + 1}`}
-                        className={`h-16 w-16 object-cover rounded cursor-pointer flex-shrink-0 border-2 transition-all ${
-                          index === currentImageIndex ? 'border-primary' : 'border-transparent'
-                        }`}
-                        onClick={() => setCurrentImageIndex(index)}
-                      />
-                    ))}
-                  </div>
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="absolute left-4 top-1/2 -translate-y-1/2"
+                      onClick={() => setCurrentImageIndex(prev => 
+                        prev === 0 ? imageUrls.length - 1 : prev - 1
+                      )}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="absolute right-16 top-1/2 -translate-y-1/2"
+                      onClick={() => setCurrentImageIndex(prev => 
+                        prev === imageUrls.length - 1 ? 0 : prev + 1
+                      )}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    
+                    <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded text-sm">
+                      {currentImageIndex + 1} / {imageUrls.length}
+                    </div>
+                  </>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Photo Info & Actions */}
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="p-6">
-                <h1 className="text-2xl font-bold mb-4">{photo.title}</h1>
-                
-                {/* Photographer Info */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={photo.profiles?.avatar_url || undefined} />
-                      <AvatarFallback>
-                        {photo.profiles?.display_name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{photo.profiles?.display_name || '匿名用户'}</p>
-                      <p className="text-sm text-muted-foreground">摄影师</p>
-                    </div>
-                  </div>
+              </div>
+              
+              {/* Thumbnail navigation */}
+              {imageUrls.length > 1 && (
+                <div className="p-4 flex gap-2 overflow-x-auto">
+                  {imageUrls.map((url, index) => (
+                    <img
+                      key={index}
+                      src={url}
+                      alt={`${photo.title} ${index + 1}`}
+                      className={`h-16 w-16 object-cover rounded cursor-pointer flex-shrink-0 border-2 transition-all ${
+                        index === currentImageIndex ? 'border-primary' : 'border-transparent'
+                      }`}
+                      onClick={() => setCurrentImageIndex(index)}
+                    />
+                  ))}
                 </div>
-                
-                <Separator className="my-4" />
-                
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-1 mb-1">
-                      <Heart className={`h-4 w-4 ${userHasLiked ? 'fill-current text-red-500' : ''}`} />
-                      <span className="font-medium">{likesCount}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">点赞</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-1 mb-1">
-                      <Eye className="h-4 w-4" />
-                      <span className="font-medium">{photo.views_count || 0}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">浏览</p>
-                  </div>
-                  {photo.average_rating > 0 && (
-                    <div className="text-center col-span-2">
-                      <div className="flex items-center justify-center space-x-1 mb-1">
-                        <TrendingUp className="h-4 w-4 text-primary" />
-                        <span className="font-medium text-primary">{photo.average_rating.toFixed(1)}</span>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 移动端和桌面端不同的内容布局 */}
+          <div className="lg:grid lg:grid-cols-3 lg:gap-8 space-y-6 lg:space-y-0">
+            {/* Photo Info & Actions - 在移动端显示在图片下方 */}
+            <div className="lg:col-span-1 lg:order-2 space-y-6">
+              <Card>
+                <CardContent className="p-6">
+                  <h1 className="text-2xl font-bold mb-4">{photo.title}</h1>
+                  
+                  {/* Photographer Info */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={photo.profiles?.avatar_url || undefined} />
+                        <AvatarFallback>
+                          {photo.profiles?.display_name?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{photo.profiles?.display_name || '匿名用户'}</p>
+                        <p className="text-sm text-muted-foreground">摄影师</p>
                       </div>
-                      <p className="text-xs text-muted-foreground">{photo.ratings_count} 个评分</p>
                     </div>
-                  )}
-                </div>
-                
-                <Button
-                  className="w-full"
-                  onClick={() => toggleLike()}
-                  disabled={!user || isToggling}
-                  variant={userHasLiked ? "default" : "outline"}
-                >
-                  <Heart className={`h-4 w-4 mr-2 ${userHasLiked ? 'fill-current' : ''}`} />
-                  {userHasLiked ? '取消点赞' : '点赞'}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Description */}
-            {photo.description && (
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-medium mb-2">作品描述</h3>
-                  <p className="text-muted-foreground">{photo.description}</p>
+                  </div>
+                  
+                  <Separator className="my-4" />
+                  
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center space-x-1 mb-1">
+                        <Heart className={`h-4 w-4 ${userHasLiked ? 'fill-current text-red-500' : ''}`} />
+                        <span className="font-medium">{likesCount}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">点赞</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center space-x-1 mb-1">
+                        <Eye className="h-4 w-4" />
+                        <span className="font-medium">{photo.views_count || 0}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">浏览</p>
+                    </div>
+                    {photo.average_rating > 0 && (
+                      <div className="text-center col-span-2">
+                        <div className="flex items-center justify-center space-x-1 mb-1">
+                          <TrendingUp className="h-4 w-4 text-primary" />
+                          <span className="font-medium text-primary">{photo.average_rating.toFixed(1)}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{photo.ratings_count} 个评分</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Button
+                    className="w-full"
+                    onClick={() => toggleLike()}
+                    disabled={!user || isToggling}
+                    variant={userHasLiked ? "default" : "outline"}
+                  >
+                    <Heart className={`h-4 w-4 mr-2 ${userHasLiked ? 'fill-current' : ''}`} />
+                    {userHasLiked ? '取消点赞' : '点赞'}
+                  </Button>
                 </CardContent>
               </Card>
-            )}
 
-            {/* Camera Equipment */}
-            {photo.camera_equipment && (
-              <Card>
+              {/* Description */}
+              {photo.description && (
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="font-medium mb-2">作品描述</h3>
+                    <p className="text-muted-foreground">{photo.description}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Camera Equipment */}
+              {photo.camera_equipment && (
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="font-medium mb-2">拍摄设备</h3>
+                    <p className="text-muted-foreground">{photo.camera_equipment}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Rating - 在移动端也显示 */}
+              <Card className="lg:hidden">
                 <CardContent className="p-6">
-                  <h3 className="font-medium mb-2">拍摄设备</h3>
-                  <p className="text-muted-foreground">{photo.camera_equipment}</p>
+                  <PhotoRating photoId={parseInt(id!)} />
                 </CardContent>
               </Card>
-            )}
+            </div>
 
-            {/* Rating */}
-            <Card>
-              <CardContent className="p-6">
-                <PhotoRating photoId={parseInt(id!)} />
-              </CardContent>
-            </Card>
+            {/* Comments and Rating - 在移动端位于右侧 */}
+            <div className="lg:col-span-2 lg:order-1 space-y-6">
+              {/* Rating - 只在桌面端显示 */}
+              <Card className="hidden lg:block">
+                <CardContent className="p-6">
+                  <PhotoRating photoId={parseInt(id!)} />
+                </CardContent>
+              </Card>
 
-            {/* Comments */}
-            <Card>
-              <CardContent className="p-6">
-                <PhotoComments photoId={parseInt(id!)} />
-              </CardContent>
-            </Card>
+              {/* Comments */}
+              <Card>
+                <CardContent className="p-6">
+                  <PhotoComments photoId={parseInt(id!)} />
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>

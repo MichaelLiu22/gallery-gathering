@@ -114,15 +114,30 @@ export default function PhotoGrid() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <img src="/photoLogo.png" alt="摄影分享小营地" className="h-8 w-8" />
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              摄影分享小营地~📷
-            </h1>
-          </div>
-          
-          <div className="flex items-center space-x-3">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            {/* 左侧Logo和标题 */}
+            <div className="flex items-center space-x-2 min-w-0 flex-1">
+              <img src="/photoLogo.png" alt="摄影分享小营地" className="h-8 w-8 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                {/* 移动端：两行显示 */}
+                <div className="block sm:hidden">
+                  <div className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight">
+                    摄影分享
+                  </div>
+                  <div className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight">
+                    小营地~📷
+                  </div>
+                </div>
+                {/* 桌面端：一行显示 */}
+                <h1 className="hidden sm:block text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  摄影分享小营地~📷
+                </h1>
+              </div>
+            </div>
+            
+            {/* 右侧按钮组 */}
+            <div className="flex items-center space-x-1 sm:space-x-3 flex-shrink-0">
             {user ? (
               <>
                 <span className="text-sm text-muted-foreground hidden sm:inline">
@@ -130,9 +145,12 @@ export default function PhotoGrid() {
                 </span>
                 <NotificationBadge />
                 <FriendManagement />
-                <Button variant="ghost" size="sm" onClick={handleProfileClick}>
+                <Button variant="ghost" size="sm" onClick={handleProfileClick} className="hidden sm:flex">
                   <User className="h-4 w-4 mr-2" />
-                  个人资料
+                  <span className="hidden md:inline">个人资料</span>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleProfileClick} className="sm:hidden">
+                  <User className="h-4 w-4" />
                 </Button>
                 <Button 
                   variant="outline" 
@@ -140,10 +158,10 @@ export default function PhotoGrid() {
                   onClick={() => setUploadDialogOpen(true)}
                   className="bg-gradient-to-r from-primary to-accent text-background hover:opacity-90 transition-all"
                 >
-                  <Upload className="h-4 w-4 mr-2" />
-                  发布作品
+                  <Upload className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">发布作品</span>
                 </Button>
-                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                <Button variant="ghost" size="sm" onClick={handleSignOut} className="hidden md:flex">
                   <LogOut className="h-4 w-4 mr-2" />
                   退出
                 </Button>
@@ -158,6 +176,7 @@ export default function PhotoGrid() {
                 登录/注册
               </Button>
             )}
+            </div>
           </div>
         </div>
       </header>
