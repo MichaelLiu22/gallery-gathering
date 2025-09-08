@@ -80,7 +80,7 @@ export const useUpdateProfile = () => {
 };
 
 export const useProfile = (userId?: string) => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['profile', userId],
     queryFn: async () => {
       let targetUserId = userId;
@@ -101,4 +101,6 @@ export const useProfile = (userId?: string) => {
     },
     enabled: !!userId || !!supabase.auth.getUser(),
   });
+  
+  return query || { data: undefined, isLoading: false, error: null };
 };

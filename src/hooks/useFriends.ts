@@ -32,7 +32,7 @@ export interface FriendRequest {
 }
 
 export const useFriends = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['friends'],
     queryFn: async () => {
       const { data: authData } = await supabase.auth.getUser();
@@ -69,10 +69,12 @@ export const useFriends = () => {
       return friendsWithScores;
     },
   });
+  
+  return query || { data: undefined, isLoading: false, error: null };
 };
 
 export const useFriendRequests = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['friend-requests'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -94,6 +96,8 @@ export const useFriendRequests = () => {
       return data;
     },
   });
+  
+  return query || { data: undefined, isLoading: false, error: null };
 };
 
 export const useSendFriendRequest = () => {

@@ -38,7 +38,7 @@ export const usePhotos = (
   page: number = 1,
   limit: number = 8
 ) => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['photos', sortOrder, filter, page, limit],
     queryFn: async () => {
       const { data: authData } = await supabase.auth.getUser();
@@ -172,11 +172,13 @@ export const usePhotos = (
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
+  
+  return query || { data: undefined, isLoading: false, error: null };
 };
 
 // Hook for getting total count of photos (for pagination)
 export const usePhotosCount = (filter: PhotoFilter = 'all') => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['photos-count', filter],
     queryFn: async () => {
       const { data: authData } = await supabase.auth.getUser();
@@ -229,4 +231,6 @@ export const usePhotosCount = (filter: PhotoFilter = 'all') => {
     },
     retry: 2,
   });
+  
+  return query || { data: undefined, isLoading: false, error: null };
 };
