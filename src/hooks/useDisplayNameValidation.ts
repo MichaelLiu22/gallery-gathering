@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 export const checkDisplayNameAvailability = async (displayName: string): Promise<boolean> => {
   if (!displayName.trim()) return false;

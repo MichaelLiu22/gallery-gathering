@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useUploadPhoto } from '@/hooks/useUploadPhoto';
 import { Upload, X, Plus, Camera } from 'lucide-react';
 import { toast } from 'sonner';
-import { ENV_OK } from '@/lib/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 const formSchema = z.object({
   title: z.string().min(1, '请输入作品标题'),
@@ -54,11 +54,6 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
   // 处理文件选择的函数
   const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-
-    if (!ENV_OK) {
-      toast.error('环境未配置，无法上传。请配置 VITE_SUPABASE_URL 与 VITE_SUPABASE_ANON_KEY 后重试。');
-      return;
-    }
 
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -108,11 +103,6 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
   }, [form, selectedFiles]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (!ENV_OK) {
-      toast.error('环境未配置，无法上传。请配置 VITE_SUPABASE_URL 与 VITE_SUPABASE_ANON_KEY 后重试。');
-      return;
-    }
-
     if (acceptedFiles.length === 0) return;
 
     const updatedFiles = [...selectedFiles, ...acceptedFiles.slice(0, 9 - selectedFiles.length)];
@@ -166,11 +156,6 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
   });
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!ENV_OK) {
-      toast.error('环境未配置，无法上传。请配置 VITE_SUPABASE_URL 与 VITE_SUPABASE_ANON_KEY 后重试。');
-      return;
-    }
-
     if (selectedFiles.length === 0) {
       toast.error('请先选择图片');
       return;
@@ -252,20 +237,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
           <DialogTitle>发布作品</DialogTitle>
         </DialogHeader>
 
-        {!ENV_OK ? (
-          <div className="border-2 border-dashed border-destructive/25 rounded-lg p-12 text-center">
-            <Upload className="h-16 w-16 mx-auto mb-4 text-destructive/50" />
-            <p className="text-lg font-medium mb-2 text-destructive">
-              环境未配置
-            </p>
-            <p className="text-center text-muted-foreground mb-4">
-              请配置 VITE_SUPABASE_URL 与 VITE_SUPABASE_ANON_KEY 环境变量后重试
-            </p>
-            <p className="text-center text-sm text-muted-foreground">
-              配置完成后，页面将自动刷新并支持图片上传功能
-            </p>
-          </div>
-        ) : selectedFiles.length === 0 ? (
+        {selectedFiles.length === 0 ? (
           <div
             {...getRootProps()}
             className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${

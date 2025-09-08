@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useFriends, useSendFriendRequest, useFriendRequests } from '@/hooks/useFriends';
 import { useFollowUser, useUnfollowUser, useIsFollowing } from '@/hooks/useFollows';
 import { useProfile } from '@/hooks/useProfiles';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';

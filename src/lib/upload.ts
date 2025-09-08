@@ -1,17 +1,13 @@
-import { supabase, ENV_OK } from './supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 export async function safeUpload(file: File): Promise<string> {
-  if (!ENV_OK || !supabase) {
-    throw new Error('Upload disabled: missing Supabase env.');
-  }
-
   if (!file) {
     throw new Error('No file provided');
   }
 
   const ext = file.name.split('.').pop() ?? 'bin';
   const path = `images/${Date.now()}.${ext}`;
-  const bucket = import.meta.env.VITE_STORAGE_BUCKET || 'photos';
+  const bucket = 'photos';
 
   const res = await supabase.storage.from(bucket).upload(path, file, { 
     upsert: false,
@@ -36,10 +32,6 @@ export async function safeUpload(file: File): Promise<string> {
 }
 
 export async function safeUploadMultiple(files: File[]): Promise<string[]> {
-  if (!ENV_OK || !supabase) {
-    throw new Error('Upload disabled: missing Supabase env.');
-  }
-
   if (!files || files.length === 0) {
     throw new Error('No files provided');
   }
