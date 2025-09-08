@@ -14,7 +14,8 @@ export const useFollowing = () => {
   return useQuery({
     queryKey: ['following'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
       if (!user) return [];
 
       const { data, error } = await supabase
@@ -39,7 +40,8 @@ export const useFollowers = () => {
   return useQuery({
     queryKey: ['followers'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
       if (!user) return [];
 
       const { data, error } = await supabase
@@ -64,7 +66,8 @@ export const useIsFollowing = (userId: string) => {
   return useQuery({
     queryKey: ['isFollowing', userId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
       if (!user || !userId) return false;
 
       const { data, error } = await supabase
@@ -87,7 +90,8 @@ export const useFollowUser = () => {
   
   return useMutation({
     mutationFn: async (followingId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
       if (!user) throw new Error('未登录');
 
       const { data, error } = await supabase
@@ -116,7 +120,8 @@ export const useUnfollowUser = () => {
   
   return useMutation({
     mutationFn: async (followingId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
       if (!user) throw new Error('未登录');
 
       const { error } = await supabase

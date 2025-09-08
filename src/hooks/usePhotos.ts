@@ -41,7 +41,8 @@ export const usePhotos = (
   return useQuery({
     queryKey: ['photos', sortOrder, filter, page, limit],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
       
       let query = supabase
         .from('photos')
@@ -178,7 +179,8 @@ export const usePhotosCount = (filter: PhotoFilter = 'all') => {
   return useQuery({
     queryKey: ['photos-count', filter],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
       
       let query = supabase
         .from('photos')

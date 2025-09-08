@@ -38,7 +38,8 @@ export const useAuthProvider = () => {
     // Get initial session with error handling
     const getInitialSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: authData, error } = await supabase.auth.getSession();
+        const session = authData?.session;
         
         if (error) {
           console.error('Error getting session:', error);
