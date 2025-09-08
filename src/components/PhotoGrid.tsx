@@ -118,7 +118,7 @@ export default function PhotoGrid() {
           <div className="flex items-center space-x-3">
             <Camera className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              摄影作品集
+              摄影分享小营地~📷
             </h1>
           </div>
           
