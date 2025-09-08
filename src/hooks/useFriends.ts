@@ -35,8 +35,9 @@ export const useFriends = () => {
   return useQuery({
     queryKey: ['friends'],
     queryFn: async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user?.id) throw new Error('Not authenticated');
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
+      if (!user?.id) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
         .from('friendships')
@@ -45,7 +46,7 @@ export const useFriends = () => {
           friend_profile:profiles(display_name, avatar_url, user_id)
         `)
         .eq('status', 'accepted')
-        .eq('user_id', user.user.id);
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -100,14 +101,15 @@ export const useSendFriendRequest = () => {
 
   return useMutation({
     mutationFn: async (receiverId: string) => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user?.id) throw new Error('Not authenticated');
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
+      if (!user?.id) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
         .from('friend_requests')
         .insert([
           {
-            sender_id: user.user.id,
+            sender_id: user.id,
             receiver_id: receiverId,
           }
         ])
@@ -194,7 +196,7 @@ export const useRemoveFriend = () => {
       const { error } = await supabase
         .from('friendships')
         .delete()
-        .or(`and(user_id.eq.${(await supabase.auth.getUser()).data.user?.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${(await supabase.auth.getUser()).data.user?.id})`);
+        .or(`and(user_id.eq.${(await supabase.auth.getUser()).data?.user?.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${(await supabase.auth.getUser()).data?.user?.id})`);
 
       if (error) throw error;
     },
