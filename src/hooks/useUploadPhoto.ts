@@ -47,9 +47,8 @@ export const useUploadPhoto = () => {
           throw new Error('Upload failed - no result returned');
         }
 
-        const { error: uploadError } = uploadResult;
-        if (uploadError) {
-          throw uploadError;
+        if (uploadResult.error) {
+          throw uploadResult.error;
         }
 
         // Get public URL
@@ -84,11 +83,11 @@ export const useUploadPhoto = () => {
         throw new Error('Database insert failed - no result returned');
       }
 
-      const { data: photo, error: dbError } = insertResult;
-      if (dbError) {
-        throw dbError;
+      if (insertResult.error) {
+        throw insertResult.error;
       }
 
+      const photo = insertResult.data;
       if (!photo) {
         throw new Error('No photo data returned after insert');
       }
