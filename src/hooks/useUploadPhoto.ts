@@ -21,10 +21,11 @@ export const useUploadPhoto = () => {
 
   return useMutation({
     mutationFn: async (data: UploadPhotoData) => {
-      const user = (await supabase.auth.getUser()).data.user;
-      if (!user) {
+      const authResult = await supabase.auth.getUser();
+      if (!authResult?.data?.user) {
         throw new Error('User not authenticated');
       }
+      const user = authResult.data.user;
 
       // Upload all files and collect URLs
       const imageUrls: string[] = [];
@@ -35,27 +36,36 @@ export const useUploadPhoto = () => {
         const fileName = `${user.id}/${Date.now()}_${i}.${fileExt}`;
 
         // Upload file to storage
-        const { error: uploadError } = await supabase.storage
+        const uploadResult = await supabase.storage
           .from('photos')
           .upload(fileName, file, {
             cacheControl: '3600',
             upsert: false
           });
 
+        if (!uploadResult) {
+          throw new Error('Upload failed - no result returned');
+        }
+
+        const { error: uploadError } = uploadResult;
         if (uploadError) {
           throw uploadError;
         }
 
         // Get public URL
-        const { data: urlData } = supabase.storage
+        const urlResult = supabase.storage
           .from('photos')
           .getPublicUrl(fileName);
 
-        imageUrls.push(urlData.publicUrl);
+        if (!urlResult?.data?.publicUrl) {
+          throw new Error('Failed to get public URL');
+        }
+
+        imageUrls.push(urlResult.data.publicUrl);
       }
 
       // Insert photo record with image array
-      const { data: photo, error: dbError } = await supabase
+      const insertResult = await supabase
         .from('photos')
         .insert({
           title: data.title,
@@ -70,8 +80,17 @@ export const useUploadPhoto = () => {
         .select()
         .single();
 
+      if (!insertResult) {
+        throw new Error('Database insert failed - no result returned');
+      }
+
+      const { data: photo, error: dbError } = insertResult;
       if (dbError) {
         throw dbError;
+      }
+
+      if (!photo) {
+        throw new Error('No photo data returned after insert');
       }
 
       return photo;
