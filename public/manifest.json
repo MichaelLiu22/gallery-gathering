@@ -1,0 +1,21 @@
+{
+  "name": "摄影分享小营地",
+  "short_name": "摄影分享",
+  "description": "摄影分享小营地，分享和欣赏优秀的摄影作品",
+  "icons": [
+    {
+      "src": "/photoLogo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/photoLogo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
