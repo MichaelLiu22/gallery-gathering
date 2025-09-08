@@ -51,25 +51,7 @@ const useFormField = () => {
     throw new Error("useFormField should be used within <FormItem>")
   }
 
-  // Check if we have form context
-  let formContext;
-  try {
-    formContext = useFormContext();
-    console.log('Form context:', formContext); // Debug log
-  } catch (error) {
-    console.error('useFormContext error:', error); // Debug log
-    throw new Error("useFormField should be used within <FormProvider/Form>");
-  }
-  
-  if (!formContext) {
-    throw new Error("useFormField should be used within <FormProvider/Form> - context is null")
-  }
-
-  const { getFieldState, formState } = formContext
-  if (!getFieldState || !formState) {
-    throw new Error("Invalid form context - missing getFieldState or formState")
-  }
-
+  const { getFieldState, formState } = useFormContext()
   const fieldState = getFieldState(fieldContext.name, formState)
   const { id } = itemContext
 
