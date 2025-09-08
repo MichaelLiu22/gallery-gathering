@@ -91,7 +91,7 @@ export default function ImageZoom({ src, alt, onClose }: ImageZoomProps) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+      className="fixed inset-0 z-50 bg-background flex items-center justify-center"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -153,7 +153,7 @@ export default function ImageZoom({ src, alt, onClose }: ImageZoomProps) {
           ref={imageRef}
           src={src}
           alt={alt}
-          className="max-w-full max-h-full object-contain transition-transform duration-100 select-none"
+          className="max-w-[95vw] max-h-[95vh] object-contain transition-transform duration-100 select-none"
           style={{
             transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
             cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in',
@@ -162,7 +162,8 @@ export default function ImageZoom({ src, alt, onClose }: ImageZoomProps) {
           onClick={(e) => {
             e.stopPropagation();
             if (scale === 1) {
-              handleZoomIn();
+              // 新页面全屏展示图片
+              window.open(`/photo-fullscreen?src=${encodeURIComponent(src)}&alt=${encodeURIComponent(alt)}`, '_blank');
             }
           }}
         />

@@ -18,6 +18,10 @@ const formSchema = z.object({
   title: z.string().min(1, '请输入作品标题'),
   description: z.string().optional(),
   camera_equipment: z.string().optional(),
+  iso: z.string().optional(),
+  aperture: z.string().optional(),
+  shutter_speed: z.string().optional(),
+  focal_length: z.string().optional(),
   visibility: z.enum(['public', 'friends', 'private']).default('public'),
 });
 
@@ -38,6 +42,10 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
       title: '',
       description: '',
       camera_equipment: '',
+      iso: '',
+      aperture: '',
+      shutter_speed: '',
+      focal_length: '',
       visibility: 'public' as const,
     },
   });
@@ -67,11 +75,22 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
             form.setValue('camera_equipment', camera);
           }
 
+          const isoValue = exifData.ISO ? exifData.ISO.toString() : '';
+          const apertureValue = exifData.FNumber ? `f/${exifData.FNumber}` : '';
+          const shutterValue = exifData.ExposureTime ? `1/${Math.round(1 / exifData.ExposureTime)}s` : '';
+          const focalValue = exifData.FocalLength ? `${exifData.FocalLength}mm` : '';
+
+          // 自动填充表单
+          form.setValue('iso', isoValue);
+          form.setValue('aperture', apertureValue);
+          form.setValue('shutter_speed', shutterValue);
+          form.setValue('focal_length', focalValue);
+
           setExposureData({
-            iso: exifData.ISO,
-            aperture: exifData.FNumber ? `f/${exifData.FNumber}` : undefined,
-            shutter_speed: exifData.ExposureTime ? `1/${Math.round(1 / exifData.ExposureTime)}` : undefined,
-            focal_length: exifData.FocalLength ? `${exifData.FocalLength}mm` : undefined,
+            iso: isoValue,
+            aperture: apertureValue,
+            shutter_speed: shutterValue,
+            focal_length: focalValue,
           });
         }
       }).catch(console.error);
@@ -93,13 +112,21 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
       return;
     }
 
+    // 使用表单中的手动输入值
+    const exposureSettings = {
+      iso: values.iso || exposureData.iso,
+      aperture: values.aperture || exposureData.aperture,
+      shutter_speed: values.shutter_speed || exposureData.shutter_speed,
+      focal_length: values.focal_length || exposureData.focal_length,
+    };
+
     uploadPhoto({
       title: values.title,
       description: values.description,
       camera_equipment: values.camera_equipment,
       visibility: values.visibility,
       files: selectedFiles,
-      exposure_settings: exposureData,
+      exposure_settings: exposureSettings,
     }, {
       onSuccess: () => {
         handleClose();
@@ -123,6 +150,10 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
     if (index === 0) {
       setExposureData({});
       form.setValue('camera_equipment', '');
+      form.setValue('iso', '');
+      form.setValue('aperture', '');
+      form.setValue('shutter_speed', '');
+      form.setValue('focal_length', '');
     }
   };
   
@@ -132,6 +163,10 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
     setPreviews([]);
     setExposureData({});
     form.setValue('camera_equipment', '');
+    form.setValue('iso', '');
+    form.setValue('aperture', '');
+    form.setValue('shutter_speed', '');
+    form.setValue('focal_length', '');
   };
 
   const handleClose = () => {
@@ -228,21 +263,83 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
               </div>
             </div>
 
-            {/* EXIF data display */}
-            {Object.keys(exposureData).length > 0 && (
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <Camera className="h-4 w-4" />
-                  拍摄参数
-                </h4>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  {exposureData.iso && <span>ISO: {exposureData.iso}</span>}
-                  {exposureData.aperture && <span>光圈: {exposureData.aperture}</span>}
-                  {exposureData.shutter_speed && <span>快门: {exposureData.shutter_speed}s</span>}
-                  {exposureData.focal_length && <span>焦距: {exposureData.focal_length}</span>}
-                </div>
+            {/* 拍摄参数输入区域 */}
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <h4 className="font-medium mb-4 flex items-center gap-2">
+                <Camera className="h-4 w-4" />
+                拍摄参数 (可手动调整)
+              </h4>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="iso"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ISO</FormLabel>
+                      <FormControl>
+                        <Input placeholder="例如: 800" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="aperture"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>光圈</FormLabel>
+                      <FormControl>
+                        <Input placeholder="例如: f/2.8" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="shutter_speed"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>快门速度</FormLabel>
+                      <FormControl>
+                        <Input placeholder="例如: 1/125s" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="focal_length"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>焦距</FormLabel>
+                      <FormControl>
+                        <Input placeholder="例如: 50mm" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            )}
+              
+              {Object.keys(exposureData).length > 0 && (
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm text-muted-foreground mb-2">从图片中自动检测到的参数：</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {exposureData.iso && <span>ISO: {exposureData.iso}</span>}
+                    {exposureData.aperture && <span>光圈: {exposureData.aperture}</span>}
+                    {exposureData.shutter_speed && <span>快门: {exposureData.shutter_speed}</span>}
+                    {exposureData.focal_length && <span>焦距: {exposureData.focal_length}</span>}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Form */}
             <Form {...form}>

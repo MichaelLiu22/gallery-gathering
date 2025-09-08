@@ -305,19 +305,21 @@ export default function PhotoView() {
           <div className="lg:col-span-2">
             <Card>
               <CardContent className="p-0">
-                <div className="relative bg-black rounded-lg overflow-hidden">
+                <div className="relative bg-background rounded-lg overflow-hidden">
                   <img
                     src={currentImage}
                     alt={photo.title}
-                    className="w-full max-h-[70vh] object-contain cursor-grab active:cursor-grabbing"
+                    className="w-full max-h-[70vh] object-cover cursor-pointer"
                     style={{
                       transform: `scale(${imageZoom}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
                       transformOrigin: 'center center'
                     }}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
+                    onClick={() => {
+                      // 点击图片跳转到新页面全屏展示
+                      window.open(`/photo-fullscreen?src=${encodeURIComponent(currentImage)}&alt=${encodeURIComponent(photo.title)}`, '_blank');
+                    }}
                     draggable={false}
                   />
                   

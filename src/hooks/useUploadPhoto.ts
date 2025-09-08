@@ -9,7 +9,7 @@ export interface UploadPhotoData {
   visibility: 'public' | 'friends' | 'private';
   files: File[]; // Changed from single file to array
   exposure_settings?: {
-    iso?: number;
+    iso?: string;
     aperture?: string;
     shutter_speed?: string;
     focal_length?: string;
