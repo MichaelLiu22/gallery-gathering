@@ -193,10 +193,14 @@ export const useRemoveFriend = () => {
 
   return useMutation({
     mutationFn: async (friendId: string) => {
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
+      if (!user?.id) throw new Error('Not authenticated');
+
       const { error } = await supabase
         .from('friendships')
         .delete()
-        .or(`and(user_id.eq.${(await supabase.auth.getUser()).data?.user?.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${(await supabase.auth.getUser()).data?.user?.id})`);
+        .or(`and(user_id.eq.${user.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${user.id})`);
 
       if (error) throw error;
     },

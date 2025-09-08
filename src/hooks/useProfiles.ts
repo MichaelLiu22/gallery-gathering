@@ -23,10 +23,14 @@ export const useCreateProfile = () => {
   
   return useMutation({
     mutationFn: async (data: CreateProfileData) => {
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
+      if (!user?.id) throw new Error('未登录');
+
       const { data: profile, error } = await supabase
         .from('profiles')
         .insert([{
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: user.id,
           display_name: data.display_name,
           bio: data.bio || null,
           favorite_camera: data.favorite_camera || null,
@@ -49,7 +53,8 @@ export const useUpdateProfile = () => {
   
   return useMutation({
     mutationFn: async (data: Partial<CreateProfileData>) => {
-      const user = (await supabase.auth.getUser()).data.user;
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
       if (!user) throw new Error('未登录');
 
       // 使用 upsert 操作，如果记录存在则更新，不存在则创建
@@ -78,7 +83,11 @@ export const useProfile = (userId?: string) => {
   return useQuery({
     queryKey: ['profile', userId],
     queryFn: async () => {
-      const targetUserId = userId || (await supabase.auth.getUser()).data.user?.id;
+      let targetUserId = userId;
+      if (!targetUserId) {
+        const { data: authData } = await supabase.auth.getUser();
+        targetUserId = authData?.user?.id;
+      }
       if (!targetUserId) return null;
 
       const { data, error } = await supabase
