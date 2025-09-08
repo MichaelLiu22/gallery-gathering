@@ -179,7 +179,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
     return () => {
       previews.forEach(preview => URL.revokeObjectURL(preview));
     };
-  }, []);
+  }, [previews]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
