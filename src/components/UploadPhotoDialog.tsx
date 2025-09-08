@@ -51,26 +51,19 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
     },
   });
 
-  // 统一的文件处理函数
-  const handlePickOrDrop = useCallback((
-    e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLElement>
-  ) => {
-    e.preventDefault?.();
+  // 处理文件选择的函数
+  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
 
     if (!ENV_OK) {
       toast.error('环境未配置，无法上传。请配置 VITE_SUPABASE_URL 与 VITE_SUPABASE_ANON_KEY 后重试。');
       return;
     }
 
-    const filesList =
-      (e as React.DragEvent).dataTransfer?.files ??
-      (e.target as HTMLInputElement)?.files ??
-      null;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    if (!filesList || filesList.length === 0) return;
-
-    const acceptedFiles = Array.from(filesList).slice(0, 9 - selectedFiles.length); // Limit to 9 total images
-    
+    const acceptedFiles = Array.from(files).slice(0, 9 - selectedFiles.length);
     if (acceptedFiles.length === 0) return;
 
     const updatedFiles = [...selectedFiles, ...acceptedFiles];
@@ -98,7 +91,6 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
           const shutterValue = exifData.ExposureTime ? `1/${Math.round(1 / exifData.ExposureTime)}s` : '';
           const focalValue = exifData.FocalLength ? `${exifData.FocalLength}mm` : '';
 
-          // 自动填充表单
           form.setValue('iso', isoValue);
           form.setValue('aperture', apertureValue);
           form.setValue('shutter_speed', shutterValue);
@@ -116,14 +108,53 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
   }, [form, selectedFiles]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    // 模拟DragEvent结构
-    const mockEvent = {
-      dataTransfer: { files: acceptedFiles },
-      preventDefault: () => {}
-    } as React.DragEvent<HTMLElement>;
-    
-    handlePickOrDrop(mockEvent);
-  }, [handlePickOrDrop]);
+    if (!ENV_OK) {
+      toast.error('环境未配置，无法上传。请配置 VITE_SUPABASE_URL 与 VITE_SUPABASE_ANON_KEY 后重试。');
+      return;
+    }
+
+    if (acceptedFiles.length === 0) return;
+
+    const updatedFiles = [...selectedFiles, ...acceptedFiles.slice(0, 9 - selectedFiles.length)];
+    setSelectedFiles(updatedFiles);
+
+    // Create previews
+    const newPreviews = acceptedFiles.map(file => URL.createObjectURL(file));
+    setPreviews(prev => [...prev, ...newPreviews]);
+
+    // Extract EXIF data from first image if this is the first upload
+    if (selectedFiles.length === 0 && acceptedFiles[0]) {
+      const firstFile = acceptedFiles[0];
+      exifr.parse(firstFile).then((exifData: any) => {
+        if (exifData) {
+          const make = exifData.Make || '';
+          const model = exifData.Model || '';
+          const camera = `${make} ${model}`.trim();
+          
+          if (camera) {
+            form.setValue('camera_equipment', camera);
+          }
+
+          const isoValue = exifData.ISO ? exifData.ISO.toString() : '';
+          const apertureValue = exifData.FNumber ? `f/${exifData.FNumber}` : '';
+          const shutterValue = exifData.ExposureTime ? `1/${Math.round(1 / exifData.ExposureTime)}s` : '';
+          const focalValue = exifData.FocalLength ? `${exifData.FocalLength}mm` : '';
+
+          form.setValue('iso', isoValue);
+          form.setValue('aperture', apertureValue);
+          form.setValue('shutter_speed', shutterValue);
+          form.setValue('focal_length', focalValue);
+
+          setExposureData({
+            iso: isoValue,
+            aperture: apertureValue,
+            shutter_speed: shutterValue,
+            focal_length: focalValue,
+          });
+        }
+      }).catch(console.error);
+    }
+  }, [form, selectedFiles]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -243,7 +274,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
                 : 'border-muted-foreground/25 hover:border-primary/50'
             }`}
           >
-            <input {...getInputProps()} onChange={handlePickOrDrop} />
+            <input {...getInputProps()} onChange={handleFileInput} />
             <Upload className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
             <p className="text-lg font-medium mb-2">
               {isDragActive ? '放开文件即可上传' : '点击或拖拽图片到此处'}
@@ -302,7 +333,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
                     {...getRootProps()}
                     className="aspect-square border-2 border-dashed border-border rounded-lg flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
                   >
-                    <input {...getInputProps()} onChange={handlePickOrDrop} />
+                    <input {...getInputProps()} onChange={handleFileInput} />
                     <Plus className="h-8 w-8 text-muted-foreground" />
                   </div>
                 )}
