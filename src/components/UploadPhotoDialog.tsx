@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import exifr from 'exifr';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useUploadPhoto } from '@/hooks/useUploadPhoto';
 import { Upload, X, Plus, Camera } from 'lucide-react';
 import { toast } from 'sonner';
@@ -342,7 +342,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
             </div>
 
             {/* Form */}
-            <Form {...form}>
+            <FormProvider {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
@@ -422,7 +422,7 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
                   </Button>
                 </div>
               </form>
-            </Form>
+            </FormProvider>
           </>
         )}
       </DialogContent>
