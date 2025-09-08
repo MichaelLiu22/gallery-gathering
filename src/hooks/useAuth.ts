@@ -61,7 +61,7 @@ export const useAuthProvider = () => {
     getInitialSession();
 
     // Listen for auth changes with error handling
-    const { data: authStateData } = supabase.auth.onAuthStateChange(
+    const authListener = supabase.auth.onAuthStateChange(
       async (event, session) => {
         try {
           if (mounted) {
@@ -83,7 +83,9 @@ export const useAuthProvider = () => {
 
     return () => {
       mounted = false;
-      authStateData?.subscription?.unsubscribe();
+      if (authListener?.data?.subscription) {
+        authListener.data.subscription.unsubscribe();
+      }
     };
   }, []);
 
