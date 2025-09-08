@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabaseClient';
+import { safeUploadMultiple } from '@/lib/upload';
 import { toast } from 'sonner';
 
 export interface UploadPhotoData {
@@ -27,41 +28,8 @@ export const useUploadPhoto = () => {
       }
       const user = authResult.data.user;
 
-      // Upload all files and collect URLs
-      const imageUrls: string[] = [];
-      
-      for (let i = 0; i < data.files.length; i++) {
-        const file = data.files[i];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}_${i}.${fileExt}`;
-
-        // Upload file to storage
-        const uploadResult = await supabase.storage
-          .from('photos')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (!uploadResult) {
-          throw new Error('Upload failed - no result returned');
-        }
-
-        if (uploadResult.error) {
-          throw uploadResult.error;
-        }
-
-        // Get public URL
-        const urlResult = supabase.storage
-          .from('photos')
-          .getPublicUrl(fileName);
-
-        if (!urlResult?.data?.publicUrl) {
-          throw new Error('Failed to get public URL');
-        }
-
-        imageUrls.push(urlResult.data.publicUrl);
-      }
+      // Upload all files using safe upload function
+      const imageUrls = await safeUploadMultiple(data.files);
 
       // Insert photo record with image array
       const insertResult = await supabase

@@ -24,6 +24,11 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      // 防止解构赋值错误
+      "@typescript-eslint/strict-boolean-expressions": "warn",
+      "no-unused-expressions": "error",
+      // 强制检查可能为null/undefined的值
+      "@typescript-eslint/no-non-null-assertion": "warn",
     },
   }
 );
