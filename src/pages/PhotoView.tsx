@@ -329,16 +329,16 @@ export default function PhotoView() {
               
                 {/* Thumbnail navigation - centered */}
               {imageUrls.length > 1 && (
-                <div className="p-4 flex gap-2 justify-center overflow-x-auto">
+                <div className="p-4 flex gap-3 justify-center items-center overflow-x-auto">
                   {imageUrls.map((url, index) => (
                     <AdaptiveImage
                       key={index}
                       src={url}
                       alt={`${photo.title} ${index + 1}`}
-                      className={`h-16 w-16 rounded cursor-pointer flex-shrink-0 border-2 transition-all hover:scale-110 ${
-                        index === currentImageIndex ? 'border-primary scale-110' : 'border-border hover:border-primary/50'
+                      className={`h-20 w-20 rounded-lg cursor-pointer flex-shrink-0 border-2 transition-all hover:scale-105 ${
+                        index === currentImageIndex ? 'border-primary ring-2 ring-primary/30' : 'border-muted hover:border-primary/50'
                       }`}
-                      enableBackgroundExtension={true}
+                      enableBackgroundExtension={false}
                       onClick={() => setCurrentImageIndex(index)}
                     />
                   ))}
