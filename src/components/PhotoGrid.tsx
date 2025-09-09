@@ -327,7 +327,8 @@ const PhotoCard: React.FC<PhotoCardProps> = ({ photo, onClick }) => {
             src={imageUrls[0]}
             alt={photo.title}
             className="w-full transition-all duration-300 group-hover:scale-105"
-            enableBackgroundExtension={true}
+            enableBackgroundExtension={false}
+            isThumbnail={true}
             onClick={onClick}
           />
           
