@@ -20,7 +20,7 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [backgroundColors, setBackgroundColors] = useState<string[]>([]);
-  const [calculatedAspectRatio, setCalculatedAspectRatio] = useState(aspectRatio || 1);
+  const [calculatedAspectRatio, setCalculatedAspectRatio] = useState(aspectRatio || 4/3);
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -49,6 +49,7 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
 
   const containerStyle = {
     aspectRatio: calculatedAspectRatio.toString(),
+    minHeight: '200px', // Prevent layout shifts
     background: enableBackgroundExtension && backgroundColors.length > 0 
       ? `linear-gradient(135deg, ${backgroundColors[0]}, ${backgroundColors[1] || backgroundColors[0]})`
       : 'hsl(var(--background))'
@@ -75,8 +76,8 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
         ref={imgRef}
         src={src}
         alt={alt}
-        className={`relative z-10 w-full h-full object-contain transition-opacity duration-300 ${
-          imageLoaded ? 'opacity-100' : 'opacity-0'
+        className={`relative z-10 w-full h-full object-contain transition-all duration-500 ease-out ${
+          imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         onLoad={() => setImageLoaded(true)}
       />

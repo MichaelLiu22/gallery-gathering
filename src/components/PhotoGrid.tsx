@@ -315,7 +315,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({ photo, onClick }) => {
           <AdaptiveImage
             src={imageUrls[0]}
             alt={photo.title}
-            className="w-full transition-all duration-300"
+            className="w-full transition-all duration-300 group-hover:scale-105"
             enableBackgroundExtension={true}
             onClick={onClick}
           />

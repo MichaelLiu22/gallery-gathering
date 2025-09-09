@@ -306,11 +306,11 @@ export default function PhotoView() {
           {/* Image Display */}
           <Card>
             <CardContent className="p-0">
-              <div className="relative bg-background rounded-lg overflow-hidden">
+              <div className="relative bg-transparent rounded-lg overflow-hidden">
                 <AdaptiveImage
                   src={currentImage}
                   alt={photo.title}
-                  className="w-full max-h-[70vh] cursor-pointer transition-all duration-300"
+                  className="w-full max-h-[70vh] cursor-pointer transition-all duration-300 hover:opacity-90"
                   enableBackgroundExtension={false}
                   onClick={() => {
                     // 点击图片跳转到新页面全屏展示
@@ -318,18 +318,6 @@ export default function PhotoView() {
                   }}
                 />
                 
-                {/* Image Controls */}
-                <div className="absolute top-4 right-4 flex flex-col gap-2">
-                  <Button variant="secondary" size="sm" onClick={() => handleImageZoom(0.2)}>
-                    <ZoomIn className="h-4 w-4" />
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={() => handleImageZoom(-0.2)}>
-                    <ZoomOut className="h-4 w-4" />
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={resetImageView}>
-                    <RotateCw className="h-4 w-4" />
-                  </Button>
-                </div>
                 
                 {/* Image counter for multiple images */}
                 {imageUrls.length > 1 && (
@@ -339,18 +327,18 @@ export default function PhotoView() {
                 )}
               </div>
               
-                {/* Thumbnail navigation */}
+                {/* Thumbnail navigation - centered */}
               {imageUrls.length > 1 && (
-                <div className="p-4 flex gap-2 overflow-x-auto">
+                <div className="p-4 flex gap-2 justify-center overflow-x-auto">
                   {imageUrls.map((url, index) => (
                     <AdaptiveImage
                       key={index}
                       src={url}
                       alt={`${photo.title} ${index + 1}`}
-                      className={`h-16 w-16 rounded cursor-pointer flex-shrink-0 border-2 transition-all ${
-                        index === currentImageIndex ? 'border-primary' : 'border-transparent'
+                      className={`h-16 w-16 rounded cursor-pointer flex-shrink-0 border-2 transition-all hover:scale-110 ${
+                        index === currentImageIndex ? 'border-primary scale-110' : 'border-border hover:border-primary/50'
                       }`}
-                      enableBackgroundExtension={false}
+                      enableBackgroundExtension={true}
                       onClick={() => setCurrentImageIndex(index)}
                     />
                   ))}
