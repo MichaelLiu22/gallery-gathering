@@ -312,87 +312,86 @@ export default function UploadPhotoDialog({ open, onOpenChange }: UploadPhotoDia
               </div>
             </div>
 
-            {/* 拍摄参数输入区域 */}
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <h4 className="font-medium mb-4 flex items-center gap-2">
-                <Camera className="h-4 w-4" />
-                拍摄参数 (可手动调整)
-              </h4>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="iso"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ISO</FormLabel>
-                      <FormControl>
-                        <Input placeholder="例如: 800" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="aperture"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>光圈</FormLabel>
-                      <FormControl>
-                        <Input placeholder="例如: f/2.8" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="shutter_speed"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>快门速度</FormLabel>
-                      <FormControl>
-                        <Input placeholder="例如: 1/125s" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="focal_length"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>焦距</FormLabel>
-                      <FormControl>
-                        <Input placeholder="例如: 50mm" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              {Object.keys(exposureData).length > 0 && (
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-sm text-muted-foreground mb-2">从图片中自动检测到的参数：</p>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    {exposureData.iso && <span>ISO: {exposureData.iso}</span>}
-                    {exposureData.aperture && <span>光圈: {exposureData.aperture}</span>}
-                    {exposureData.shutter_speed && <span>快门: {exposureData.shutter_speed}</span>}
-                    {exposureData.focal_length && <span>焦距: {exposureData.focal_length}</span>}
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Form */}
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                {/* 拍摄参数输入区域 */}
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-4 flex items-center gap-2">
+                    <Camera className="h-4 w-4" />
+                    拍摄参数 (可手动调整)
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="iso"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ISO</FormLabel>
+                          <FormControl>
+                            <Input placeholder="例如: 800" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="aperture"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>光圈</FormLabel>
+                          <FormControl>
+                            <Input placeholder="例如: f/2.8" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="shutter_speed"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>快门速度</FormLabel>
+                          <FormControl>
+                            <Input placeholder="例如: 1/125s" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="focal_length"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>焦距</FormLabel>
+                          <FormControl>
+                            <Input placeholder="例如: 50mm" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {Object.keys(exposureData).length > 0 && (
+                    <div className="mt-4 pt-4 border-t">
+                      <p className="text-sm text-muted-foreground mb-2">从图片中自动检测到的参数：</p>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        {exposureData.iso && <span>ISO: {exposureData.iso}</span>}
+                        {exposureData.aperture && <span>光圈: {exposureData.aperture}</span>}
+                        {exposureData.shutter_speed && <span>快门: {exposureData.shutter_speed}</span>}
+                        {exposureData.focal_length && <span>焦距: {exposureData.focal_length}</span>}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <FormField
                   control={form.control}
                   name="title"
