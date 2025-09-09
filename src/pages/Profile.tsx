@@ -34,12 +34,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import DeletePhotoDialog from '@/components/DeletePhotoDialog';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 export default function Profile() {
   const { user } = useAuth();
-  const { data: profile, isLoading } = useProfile();
-  const { data: userPhotos } = usePhotos('latest', 'mine');
+  const { userId } = useParams();
+  const { data: profile, isLoading } = useProfile(userId);
+  const isOwnProfile = !userId || userId === user?.id;
+  const { data: userPhotos } = usePhotos('latest', isOwnProfile ? 'mine' : 'all');
   const { data: friends } = useFriends();
   const { data: followCounts } = useFollowCounts(user?.id || '');
   const { mutate: updateProfile, isPending } = useUpdateProfile();
@@ -164,7 +166,9 @@ export default function Profile() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             返回
           </Button>
-          <h1 className="text-2xl font-bold">个人资料</h1>
+          <h1 className="text-2xl font-bold">
+            {isOwnProfile ? '个人资料' : `${profile?.display_name || '用户'}的资料`}
+          </h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -358,15 +362,18 @@ export default function Profile() {
             )}
           </div>
 
-          {/* 编辑表单 */}
+          {/* 编辑表单或查看资料 */}
           <div className="lg:col-span-2">
             <Card className="p-8">
               <div className="flex items-center justify-center mb-8">
                 <User className="h-12 w-12 text-primary mr-3" />
-                <h2 className="text-xl font-semibold">编辑个人信息</h2>
+                <h2 className="text-xl font-semibold">
+                  {isOwnProfile ? '编辑个人信息' : '用户资料'}
+                </h2>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              {isOwnProfile ? (
+                <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <Label htmlFor="email" className="text-sm text-muted-foreground">
                     邮箱地址
@@ -451,7 +458,51 @@ export default function Profile() {
                   </Button>
                 </div>
               </form>
-            </Card>
+              ) : (
+                <div className="space-y-6">
+                  <div>
+                    <Label className="text-sm text-muted-foreground">邮箱地址</Label>
+                    <div className="mt-1 p-3 bg-muted rounded-md">
+                      <span className="text-muted-foreground">隐私保护</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="flex items-center">
+                      <User className="h-4 w-4 mr-2" />
+                      昵称
+                    </Label>
+                    <div className="mt-1 p-3 bg-muted rounded-md">
+                      {profile?.display_name || '未设置'}
+                    </div>
+                  </div>
+
+                  {profile?.favorite_camera && (
+                    <div>
+                      <Label className="flex items-center">
+                        <CameraIcon className="h-4 w-4 mr-2" />
+                        常用相机
+                      </Label>
+                      <div className="mt-1 p-3 bg-muted rounded-md">
+                        {profile.favorite_camera}
+                      </div>
+                    </div>
+                  )}
+
+                  {profile?.bio && (
+                    <div>
+                      <Label className="flex items-center">
+                        <Quote className="h-4 w-4 mr-2" />
+                        座右铭
+                      </Label>
+                      <div className="mt-1 p-3 bg-muted rounded-md min-h-[100px]">
+                        {profile.bio}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              </Card>
           </div>
         </div>
       </div>

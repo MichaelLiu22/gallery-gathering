@@ -195,7 +195,8 @@ export default function FriendManagement({ open, onOpenChange, defaultTab = 'fri
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <h4 className="font-medium">
+                              <h4 className="font-medium cursor-pointer hover:text-primary transition-colors"
+                                  onClick={() => window.open(`/profile/${friend.friend_id}`, '_blank')}>
                                 {friend.friend_profile?.display_name || '未知用户'}
                               </h4>
                               <p className="text-sm text-muted-foreground">
