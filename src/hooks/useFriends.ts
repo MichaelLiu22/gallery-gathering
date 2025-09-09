@@ -39,27 +39,35 @@ export const useFriends = () => {
       const user = authData?.user;
       if (!user?.id) throw new Error('Not authenticated');
 
+      // Query friendships where current user is either user_id or friend_id
       const { data, error } = await supabase
         .from('friendships')
         .select(`
           *,
-          friend_profile:profiles(display_name, avatar_url, user_id)
+          user_profile:profiles!user_id(display_name, avatar_url, user_id),
+          friend_profile:profiles!friend_id(display_name, avatar_url, user_id)
         `)
         .eq('status', 'accepted')
-        .eq('user_id', user.id);
+        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
 
       if (error) throw error;
 
-      // Get photo scores for each friend
+      // Process friendships to get the correct friend info and scores
       const friendsWithScores = await Promise.all(
         (data || []).map(async (friendship) => {
+          // Determine who is the friend (not the current user)
+          const isUserIdCurrentUser = friendship.user_id === user.id;
+          const friendId = isUserIdCurrentUser ? friendship.friend_id : friendship.user_id;
+          const friendProfile = isUserIdCurrentUser ? friendship.friend_profile : friendship.user_profile;
+          
           const { data: photoScore } = await supabase
-            .rpc('get_user_photo_score', { user_uuid: friendship.friend_id });
+            .rpc('get_user_photo_score', { user_uuid: friendId });
           
           return {
             ...friendship,
-            friend_profile: friendship.friend_profile ? {
-              ...(friendship.friend_profile as any),
+            friend_id: friendId,
+            friend_profile: friendProfile ? {
+              ...(friendProfile as any),
               photo_score: photoScore || 0
             } : null
           };
