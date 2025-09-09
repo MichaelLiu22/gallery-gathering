@@ -27,6 +27,7 @@ import SortFilter from './SortFilter';
 import NotificationBadge from './NotificationBadge';
 import FriendManagement from './FriendManagement';
 import { useDeletePhoto } from '@/hooks/useDeletePhoto';
+import { AdaptiveImage } from './AdaptiveImage';
 
 export default function PhotoGrid() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -216,7 +217,11 @@ export default function PhotoGrid() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="masonry-grid columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6"
+                 style={{
+                   columnGap: '1.5rem',
+                   columnFill: 'balance'
+                 }}>
               {filteredPhotos.map((photo) => (
                 <PhotoCard 
                   key={photo.id} 
@@ -304,13 +309,14 @@ const PhotoCard: React.FC<PhotoCardProps> = ({ photo, onClick }) => {
   const isGallery = imageUrls.length > 1;
   
   return (
-    <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+    <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1 break-inside-avoid mb-6">
       <CardContent className="p-0">
-        <div className="relative overflow-hidden rounded-t-lg">
-          <img
+        <div className="relative">
+          <AdaptiveImage
             src={imageUrls[0]}
             alt={photo.title}
-            className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+            className="w-full transition-transform duration-300 group-hover:scale-105"
+            enableBackgroundExtension={true}
             onClick={onClick}
           />
           

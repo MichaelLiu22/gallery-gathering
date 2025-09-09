@@ -30,6 +30,7 @@ import PhotoRating from '@/components/PhotoRating';
 import AddFriendDialog from '@/components/AddFriendDialog';
 import { useLikes } from '@/hooks/useLikes';
 import { useToast } from '@/hooks/use-toast';
+import { AdaptiveImage } from '@/components/AdaptiveImage';
 
 interface Photo {
   id: number;
@@ -306,21 +307,15 @@ export default function PhotoView() {
           <Card>
             <CardContent className="p-0">
               <div className="relative bg-background rounded-lg overflow-hidden">
-                <img
+                <AdaptiveImage
                   src={currentImage}
                   alt={photo.title}
-                  className="w-full max-h-[70vh] object-cover cursor-pointer"
-                  style={{
-                    transform: `scale(${imageZoom}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
-                    transformOrigin: 'center center'
-                  }}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
+                  className="w-full max-h-[70vh] cursor-pointer transition-all duration-300"
+                  enableBackgroundExtension={true}
                   onClick={() => {
                     // 点击图片跳转到新页面全屏展示
                     window.open(`/photo-fullscreen?src=${encodeURIComponent(currentImage)}&alt=${encodeURIComponent(photo.title)}`, '_blank');
                   }}
-                  draggable={false}
                 />
                 
                 {/* Image Controls */}
@@ -367,17 +362,18 @@ export default function PhotoView() {
                 )}
               </div>
               
-              {/* Thumbnail navigation */}
+                {/* Thumbnail navigation */}
               {imageUrls.length > 1 && (
                 <div className="p-4 flex gap-2 overflow-x-auto">
                   {imageUrls.map((url, index) => (
-                    <img
+                    <AdaptiveImage
                       key={index}
                       src={url}
                       alt={`${photo.title} ${index + 1}`}
-                      className={`h-16 w-16 object-cover rounded cursor-pointer flex-shrink-0 border-2 transition-all ${
+                      className={`h-16 w-16 rounded cursor-pointer flex-shrink-0 border-2 transition-all ${
                         index === currentImageIndex ? 'border-primary' : 'border-transparent'
                       }`}
+                      enableBackgroundExtension={false}
                       onClick={() => setCurrentImageIndex(index)}
                     />
                   ))}

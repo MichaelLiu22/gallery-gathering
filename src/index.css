@@ -93,4 +93,39 @@ All colors MUST be HSL.
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--accent));
   }
+
+  /* Masonry/Waterfall grid layout */
+  .masonry-grid {
+    column-fill: balance;
+  }
+
+  .masonry-grid > * {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Additional photography layout styles */
+  .photo-aspect-ratio {
+    position: relative;
+    width: 100%;
+  }
+
+  .photo-aspect-ratio img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* Custom scrollbar enhancements for masonry */
+  .masonry-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .masonry-grid {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
