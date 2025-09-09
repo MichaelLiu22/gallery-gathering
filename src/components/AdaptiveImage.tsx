@@ -49,9 +49,9 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
 
   const containerStyle = {
     aspectRatio: calculatedAspectRatio.toString(),
-    background: backgroundColors.length > 0 
+    background: enableBackgroundExtension && backgroundColors.length > 0 
       ? `linear-gradient(135deg, ${backgroundColors[0]}, ${backgroundColors[1] || backgroundColors[0]})`
-      : 'hsl(var(--muted))'
+      : 'hsl(var(--background))'
   };
 
   return (

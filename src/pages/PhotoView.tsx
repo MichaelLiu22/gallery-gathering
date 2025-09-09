@@ -311,7 +311,7 @@ export default function PhotoView() {
                   src={currentImage}
                   alt={photo.title}
                   className="w-full max-h-[70vh] cursor-pointer transition-all duration-300"
-                  enableBackgroundExtension={true}
+                  enableBackgroundExtension={false}
                   onClick={() => {
                     // 点击图片跳转到新页面全屏展示
                     window.open(`/photo-fullscreen?src=${encodeURIComponent(currentImage)}&alt=${encodeURIComponent(photo.title)}`, '_blank');
@@ -331,34 +331,11 @@ export default function PhotoView() {
                   </Button>
                 </div>
                 
-                {/* Navigation for multiple images */}
+                {/* Image counter for multiple images */}
                 {imageUrls.length > 1 && (
-                  <>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="absolute left-4 top-1/2 -translate-y-1/2"
-                      onClick={() => setCurrentImageIndex(prev => 
-                        prev === 0 ? imageUrls.length - 1 : prev - 1
-                      )}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="absolute right-16 top-1/2 -translate-y-1/2"
-                      onClick={() => setCurrentImageIndex(prev => 
-                        prev === imageUrls.length - 1 ? 0 : prev + 1
-                      )}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                    
-                    <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded text-sm">
-                      {currentImageIndex + 1} / {imageUrls.length}
-                    </div>
-                  </>
+                  <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded text-sm">
+                    {currentImageIndex + 1} / {imageUrls.length}
+                  </div>
                 )}
               </div>
               
