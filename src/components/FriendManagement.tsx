@@ -20,7 +20,13 @@ import { UserPlus, Users, Check, X, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-export default function FriendManagement() {
+interface FriendManagementProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  defaultTab?: string;
+}
+
+export default function FriendManagement({ open, onOpenChange, defaultTab = 'friends' }: FriendManagementProps) {
   const [searchEmail, setSearchEmail] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
@@ -133,7 +139,7 @@ export default function FriendManagement() {
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
           <Users className="h-4 w-4 mr-2" />
@@ -154,7 +160,7 @@ export default function FriendManagement() {
           <DialogTitle>好友管理</DialogTitle>
         </DialogHeader>
         
-        <Tabs defaultValue="friends" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="friends">
               好友列表 ({friends.length})

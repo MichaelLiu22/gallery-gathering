@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 import { 
   useNotifications, 
   useUnreadNotificationsCount, 
@@ -13,7 +14,12 @@ import {
   useNotificationRealtime 
 } from '@/hooks/useNotifications';
 
-export default function NotificationBadge() {
+interface NotificationBadgeProps {
+  onFriendRequestClick?: () => void;
+}
+
+export default function NotificationBadge({ onFriendRequestClick }: NotificationBadgeProps) {
+  const navigate = useNavigate();
   const { data: notifications = [] } = useNotifications();
   const { data: unreadCount = 0 } = useUnreadNotificationsCount();
   const { mutate: markAsRead } = useMarkNotificationsAsRead();
@@ -28,6 +34,31 @@ export default function NotificationBadge() {
     
     if (unreadIds.length > 0) {
       markAsRead(unreadIds);
+    }
+  };
+
+  const handleNotificationClick = (notification: any) => {
+    // Mark this notification as read
+    if (!notification.is_read) {
+      markAsRead([notification.id]);
+    }
+
+    // Navigate based on notification type
+    switch (notification.type) {
+      case 'comment':
+      case 'friend_post':
+      case 'like':
+        if (notification.related_id) {
+          navigate(`/photo/${notification.related_id}`);
+        }
+        break;
+      case 'friend_request':
+        if (onFriendRequestClick) {
+          onFriendRequestClick();
+        }
+        break;
+      default:
+        break;
     }
   };
 
@@ -89,9 +120,10 @@ export default function NotificationBadge() {
               {notifications.map((notification, index) => (
                 <div key={notification.id}>
                   <div 
-                    className={`p-4 hover:bg-muted/50 transition-colors ${
+                    className={`p-4 hover:bg-muted/50 transition-colors cursor-pointer ${
                       !notification.is_read ? 'bg-primary/5' : ''
                     }`}
+                    onClick={() => handleNotificationClick(notification)}
                   >
                     <div className="flex items-start gap-3">
                       <div className="text-lg">

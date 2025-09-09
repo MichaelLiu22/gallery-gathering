@@ -31,6 +31,8 @@ import { AdaptiveImage } from './AdaptiveImage';
 
 export default function PhotoGrid() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [friendManagementOpen, setFriendManagementOpen] = useState(false);
+  const [friendManagementTab, setFriendManagementTab] = useState('friends');
   const [sortOrder, setSortOrder] = useState<SortOrder>('latest');
   const [filter, setFilter] = useState<PhotoFilter>('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -71,6 +73,11 @@ export default function PhotoGrid() {
 
   const handleAuthClick = () => {
     window.location.href = '/auth';
+  };
+
+  const handleFriendRequestClick = () => {
+    setFriendManagementTab('requests');
+    setFriendManagementOpen(true);
   };
 
   if (isLoading) {
@@ -144,8 +151,12 @@ export default function PhotoGrid() {
                 <span className="text-sm text-muted-foreground hidden sm:inline">
                   欢迎, {userProfile?.display_name || user.email}
                 </span>
-                <NotificationBadge />
-                <FriendManagement />
+                <NotificationBadge onFriendRequestClick={handleFriendRequestClick} />
+                <FriendManagement 
+                  open={friendManagementOpen}
+                  onOpenChange={setFriendManagementOpen}
+                  defaultTab={friendManagementTab}
+                />
                 <Button variant="ghost" size="sm" onClick={handleProfileClick} className="hidden sm:flex">
                   <User className="h-4 w-4 mr-2" />
                   <span className="hidden md:inline">个人资料</span>
