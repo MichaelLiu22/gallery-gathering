@@ -7,6 +7,7 @@ interface AdaptiveImageProps {
   className?: string;
   aspectRatio?: number;
   enableBackgroundExtension?: boolean;
+  isThumbnail?: boolean;
   onClick?: () => void;
 }
 
@@ -16,6 +17,7 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
   className = '',
   aspectRatio,
   enableBackgroundExtension = true,
+  isThumbnail = false,
   onClick
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -29,10 +31,13 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
     img.crossOrigin = 'anonymous';
     
     img.onload = async () => {
-      const ratio = img.naturalWidth / img.naturalHeight;
-      setCalculatedAspectRatio(ratio);
+      // Skip dynamic aspect ratio calculation for thumbnails
+      if (!isThumbnail) {
+        const ratio = img.naturalWidth / img.naturalHeight;
+        setCalculatedAspectRatio(ratio);
+      }
       
-      if (enableBackgroundExtension) {
+      if (enableBackgroundExtension && !isThumbnail) {
         try {
           const colors = await extractDominantColors(img);
           setBackgroundColors(colors);
@@ -45,9 +50,9 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
     };
     
     img.src = src;
-  }, [src, enableBackgroundExtension]);
+  }, [src, enableBackgroundExtension, isThumbnail]);
 
-  const containerStyle = {
+  const containerStyle = isThumbnail ? {} : {
     aspectRatio: calculatedAspectRatio.toString(),
     minHeight: '200px', // Prevent layout shifts
     background: enableBackgroundExtension && backgroundColors.length > 0 
@@ -61,8 +66,8 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
       style={containerStyle}
       onClick={onClick}
     >
-      {/* Background blur effect */}
-      {enableBackgroundExtension && backgroundColors.length > 0 && (
+      {/* Background blur effect - only for non-thumbnails */}
+      {enableBackgroundExtension && backgroundColors.length > 0 && !isThumbnail && (
         <div 
           className="absolute inset-0 opacity-30 blur-md scale-110"
           style={{
@@ -76,7 +81,9 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
         ref={imgRef}
         src={src}
         alt={alt}
-        className={`relative z-10 w-full h-full object-contain transition-all duration-500 ease-out ${
+        className={`relative z-10 w-full h-full ${
+          isThumbnail ? 'object-cover' : 'object-contain'
+        } transition-all duration-500 ease-out ${
           imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         }`}
         onLoad={() => setImageLoaded(true)}
