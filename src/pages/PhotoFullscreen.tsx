@@ -136,9 +136,9 @@ export default function PhotoFullscreen() {
         </div>
       </div>
 
-      {/* 图片展示区域 */}
+      {/* 图片展示区域 - 移动端优化 */}
       <div 
-        className="flex-1 flex items-center justify-center overflow-hidden"
+        className="flex-1 flex items-center justify-center overflow-hidden bg-transparent"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -153,7 +153,9 @@ export default function PhotoFullscreen() {
             transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
             cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'zoom-in',
             maxWidth: '100vw',
-            maxHeight: 'calc(100vh - 80px)',
+            maxHeight: '100vh',
+            width: 'auto',
+            height: 'auto',
             objectFit: 'contain',
           }}
           draggable={false}
@@ -166,8 +168,8 @@ export default function PhotoFullscreen() {
         />
       </div>
 
-      {/* 底部说明 */}
-      <div className="p-4 bg-card/50 backdrop-blur-sm border-t">
+      {/* 底部说明 - 移除边框 */}
+      <div className="p-4 bg-card/30 backdrop-blur-sm">
         <div className="text-center text-sm text-muted-foreground">
           滚轮缩放 • 拖拽移动 • 点击图片放大 • ESC或点击X关闭
         </div>

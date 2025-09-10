@@ -305,30 +305,37 @@ export default function PhotoView() {
         {/* 移动端和桌面端不同的布局 */}
         <div className="space-y-6">
           {/* Image Display */}
-          <Card>
+          <Card className="border-0 shadow-none">
             <CardContent className="p-0">
-              <div className="relative bg-transparent rounded-lg overflow-hidden">
-                <AdaptiveImage
-                  src={currentImage}
-                  alt={photo.title}
-                  className="w-full max-h-[70vh] cursor-pointer transition-all duration-300 hover:opacity-90"
-                  enableBackgroundExtension={false}
-                  onClick={() => {
-                    // 点击图片跳转到新页面全屏展示
-                    window.open(`/photo-fullscreen?src=${encodeURIComponent(currentImage)}&alt=${encodeURIComponent(photo.title)}`, '_blank');
-                  }}
-                />
-                
+              <div className="relative bg-transparent overflow-hidden">
+                {/* 移动端优化：让图片完全显示 */}
+                <div className="w-full" style={{ 
+                  minHeight: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center'
+                }}>
+                  <AdaptiveImage
+                    src={currentImage}
+                    alt={photo.title}
+                    className="w-full max-w-full cursor-pointer transition-all duration-300 hover:opacity-90"
+                    enableBackgroundExtension={false}
+                    onClick={() => {
+                      // 点击图片跳转到新页面全屏展示
+                      window.open(`/photo-fullscreen?src=${encodeURIComponent(currentImage)}&alt=${encodeURIComponent(photo.title)}`, '_blank');
+                    }}
+                  />
+                </div>
                 
                 {/* Image counter for multiple images */}
                 {imageUrls.length > 1 && (
-                  <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded text-sm">
+                  <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
                     {currentImageIndex + 1} / {imageUrls.length}
                   </div>
                 )}
               </div>
               
-                {/* Thumbnail navigation - centered */}
+              {/* Thumbnail navigation - centered without borders */}
               {imageUrls.length > 1 && (
                 <div className="p-4 flex gap-2 justify-center items-center overflow-x-auto">
                   {imageUrls.map((url, index) => (
@@ -336,8 +343,10 @@ export default function PhotoView() {
                       key={index}
                       src={url}
                       alt={`${photo.title} ${index + 1}`}
-                      className={`h-16 w-16 rounded-lg cursor-pointer flex-shrink-0 border-2 transition-all hover:scale-105 ${
-                        index === currentImageIndex ? 'border-primary ring-2 ring-primary/30' : 'border-muted hover:border-primary/50'
+                      className={`h-16 w-16 rounded-lg cursor-pointer flex-shrink-0 transition-all hover:scale-105 ${
+                        index === currentImageIndex 
+                          ? 'ring-2 ring-primary/50 opacity-100' 
+                          : 'opacity-70 hover:opacity-100'
                       }`}
                       onClick={() => setCurrentImageIndex(index)}
                     />
@@ -347,11 +356,11 @@ export default function PhotoView() {
             </CardContent>
           </Card>
 
-          {/* 移动端和桌面端不同的内容布局 */}
-          <div className="lg:grid lg:grid-cols-3 lg:gap-8 space-y-6 lg:space-y-0">
-            {/* Photo Info & Actions - 在移动端显示在图片下方 */}
-            <div className="lg:col-span-1 lg:order-2 space-y-6">
-              <Card>
+          {/* 移动端和桌面端不同的内容布局 - 根据图片大小自动调整 */}
+          <div className="flex flex-col lg:grid lg:grid-cols-3 lg:gap-8 space-y-6 lg:space-y-0">
+            {/* Photo Info & Actions - 在移动端自动跟随在图片下方 */}
+            <div className="w-full lg:col-span-1 lg:order-2 space-y-6">
+              <Card className="border-0 shadow-md">
                 <CardContent className="p-6">
                   <h1 className="text-2xl font-bold mb-4">{photo.title}</h1>
                   
@@ -371,7 +380,7 @@ export default function PhotoView() {
                     </div>
                   </div>
                   
-                  <Separator className="my-4" />
+                  <Separator className="my-4 opacity-30" />
                   
                   {/* Stats */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
@@ -414,17 +423,17 @@ export default function PhotoView() {
 
               {/* Description */}
               {photo.description && (
-                <Card>
+                <Card className="border-0 shadow-md">
                   <CardContent className="p-6">
                     <h3 className="font-medium mb-2">作品描述</h3>
-                    <p className="text-muted-foreground">{photo.description}</p>
+                    <p className="text-muted-foreground leading-relaxed">{photo.description}</p>
                   </CardContent>
                 </Card>
               )}
 
               {/* Camera Equipment */}
               {photo.camera_equipment && (
-                <Card>
+                <Card className="border-0 shadow-md">
                   <CardContent className="p-6">
                     <h3 className="font-medium mb-2">拍摄设备</h3>
                     <p className="text-muted-foreground">{photo.camera_equipment}</p>
@@ -433,7 +442,7 @@ export default function PhotoView() {
               )}
 
               {/* Rating - 在移动端也显示 */}
-              <Card className="lg:hidden">
+              <Card className="lg:hidden border-0 shadow-md">
                 <CardContent className="p-6">
                   <PhotoRating photoId={parseInt(id!)} />
                 </CardContent>
@@ -441,16 +450,16 @@ export default function PhotoView() {
             </div>
 
             {/* Comments and Rating - 在移动端位于右侧 */}
-            <div className="lg:col-span-2 lg:order-1 space-y-6">
+            <div className="w-full lg:col-span-2 lg:order-1 space-y-6">
               {/* Rating - 只在桌面端显示 */}
-              <Card className="hidden lg:block">
+              <Card className="hidden lg:block border-0 shadow-md">
                 <CardContent className="p-6">
                   <PhotoRating photoId={parseInt(id!)} />
                 </CardContent>
               </Card>
 
               {/* Comments */}
-              <Card>
+              <Card className="border-0 shadow-md">
                 <CardContent className="p-6">
                   <PhotoComments photoId={parseInt(id!)} />
                 </CardContent>
