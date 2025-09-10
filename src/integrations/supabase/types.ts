@@ -434,6 +434,30 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: number
       }
+      rpc_friend_list: {
+        Args: { user_uuid: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          display_name: string
+          friend_id: string
+          id: string
+          status: string
+          user_id: string
+        }[]
+      }
+      rpc_friend_remove: {
+        Args: { friendship_id: string }
+        Returns: Json
+      }
+      rpc_friend_request_create: {
+        Args: { target_username: string }
+        Returns: Json
+      }
+      rpc_friend_request_respond: {
+        Args: { accept_request: boolean; request_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
