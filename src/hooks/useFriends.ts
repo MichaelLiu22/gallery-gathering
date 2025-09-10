@@ -9,7 +9,7 @@ export interface Friendship {
   friend_id: string;
   status: 'pending' | 'accepted' | 'blocked';
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
   friend_profile?: {
     display_name: string | null;
     avatar_url: string | null;
@@ -75,13 +75,15 @@ export const useFriends = () => {
     queryKey: ['friends'],
     queryFn: async () => {
       // Use the new RPC function for better performance
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .rpc('rpc_friend_list');
 
       if (error) throw error;
 
-      return (data || []).map((friend: any) => ({
+      return (data as any[] || []).map((friend: any) => ({
+        id: friend.friend_id, // Add id for component compatibility
         friend_id: friend.friend_id,
+        user_id: friend.friend_id, // Add user_id for component compatibility
         friend_profile: {
           user_id: friend.friend_id,
           display_name: friend.display_name,
@@ -124,7 +126,7 @@ export const useSendFriendRequest = () => {
 
   return useMutation({
     mutationFn: async (receiverId: string) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .rpc('rpc_friend_request_create', {
           receiver_uuid: receiverId
         });
@@ -148,7 +150,7 @@ export const useAcceptFriendRequest = () => {
 
   return useMutation({
     mutationFn: async (requestId: string) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .rpc('rpc_friend_request_respond', {
           request_uuid: requestId,
           action: 'accept'
@@ -174,7 +176,7 @@ export const useRejectFriendRequest = () => {
 
   return useMutation({
     mutationFn: async (requestId: string) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .rpc('rpc_friend_request_respond', {
           request_uuid: requestId,
           action: 'reject'
@@ -199,7 +201,7 @@ export const useRemoveFriend = () => {
 
   return useMutation({
     mutationFn: async (friendId: string) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .rpc('rpc_friend_remove', {
           friend_uuid: friendId
         });
