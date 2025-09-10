@@ -112,6 +112,7 @@ export default function PhotoComments({ photoId }: PhotoCommentsProps) {
                 }}
                 isDeletingComment={isDeletingComment}
                 isAddingComment={isAddingComment}
+                level={0}
               />
             ))}
           </div>
@@ -133,6 +134,7 @@ interface CommentItemProps {
   onCancelReply: () => void;
   isDeletingComment: boolean;
   isAddingComment: boolean;
+  level?: number;
 }
 
 function CommentItem({
@@ -147,21 +149,24 @@ function CommentItem({
   onCancelReply,
   isDeletingComment,
   isAddingComment,
+  level = 0,
 }: CommentItemProps) {
+  const maxLevel = 6; // 最大嵌套层级
+  const marginLeft = Math.min(level * 16, maxLevel * 16); // 每层缩进16px，最大6层
   return (
-    <div className="space-y-3">
-      {/* Main Comment */}
+    <div className="space-y-3" style={{ marginLeft: `${marginLeft}px` }}>
+      {/* Comment */}
       <div className="flex space-x-3">
-        <Avatar className="h-8 w-8 flex-shrink-0">
+        <Avatar className={`${level > 0 ? 'h-6 w-6' : 'h-8 w-8'} flex-shrink-0`}>
           <AvatarImage src={comment.profiles?.avatar_url || undefined} />
-          <AvatarFallback className="text-sm">
+          <AvatarFallback className={level > 0 ? 'text-xs' : 'text-sm'}>
             {comment.profiles?.display_name?.charAt(0) || 'U'}
           </AvatarFallback>
         </Avatar>
         
         <div className="flex-1 space-y-1">
           <div className="flex items-center space-x-2">
-            <span className="font-medium text-sm">
+            <span className={`font-medium ${level > 0 ? 'text-xs' : 'text-sm'}`}>
               {comment.profiles?.display_name || '匿名用户'}
             </span>
             <span className="text-xs text-muted-foreground">
@@ -172,7 +177,9 @@ function CommentItem({
             </span>
           </div>
           
-          <p className="text-sm leading-relaxed">{comment.content}</p>
+          <p className={`leading-relaxed ${level > 0 ? 'text-xs' : 'text-sm'}`}>
+            {comment.content}
+          </p>
           
           <div className="flex items-center space-x-2 pt-1">
             {user && (
@@ -204,9 +211,9 @@ function CommentItem({
 
       {/* Reply Form */}
       {replyingTo === comment.id && (
-        <div className="ml-11 space-y-2">
+        <div className={`space-y-2 ${level > 0 ? 'ml-9' : 'ml-11'}`}>
           <Textarea
-            placeholder={`回复 ${comment.profiles?.display_name || '匿名用户'}...`}
+            placeholder={`回复 @${comment.profiles?.display_name || '匿名用户'}...`}
             value={replyContent}
             onChange={(e) => setReplyContent(e.target.value)}
             className="min-h-[60px] text-sm"
@@ -230,47 +237,25 @@ function CommentItem({
         </div>
       )}
 
-      {/* Replies */}
+      {/* Nested Replies */}
       {comment.replies && comment.replies.length > 0 && (
-        <div className="ml-11 space-y-3 border-l border-border pl-4">
+        <div className="space-y-3">
           {comment.replies.map((reply) => (
-            <div key={reply.id} className="flex space-x-3">
-              <Avatar className="h-6 w-6 flex-shrink-0">
-                <AvatarImage src={reply.profiles?.avatar_url || undefined} />
-                <AvatarFallback className="text-xs">
-                  {reply.profiles?.display_name?.charAt(0) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium text-xs">
-                    {reply.profiles?.display_name || '匿名用户'}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(reply.created_at), { 
-                      addSuffix: true, 
-                      locale: zhCN 
-                    })}
-                  </span>
-                </div>
-                
-                <p className="text-xs leading-relaxed">{reply.content}</p>
-                
-                {user && user.id === reply.user_id && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDelete(reply.id)}
-                    disabled={isDeletingComment}
-                    className="h-5 px-1 text-xs text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-2 w-2 mr-1" />
-                    删除
-                  </Button>
-                )}
-              </div>
-            </div>
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              user={user}
+              onDelete={onDelete}
+              onReply={onReply}
+              replyingTo={replyingTo}
+              replyContent={replyContent}
+              setReplyContent={setReplyContent}
+              onSubmitReply={onSubmitReply}
+              onCancelReply={onCancelReply}
+              isDeletingComment={isDeletingComment}
+              isAddingComment={isAddingComment}
+              level={level + 1}
+            />
           ))}
         </div>
       )}
