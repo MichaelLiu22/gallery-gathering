@@ -21,10 +21,14 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
   onClick
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [backgroundColors, setBackgroundColors] = useState<string[]>([]);
+  const [backgroundColors, setBackgroundColors] = useState<{ dominant: string; secondary: string }>({ dominant: '', secondary: '' });
   const [calculatedAspectRatio, setCalculatedAspectRatio] = useState(aspectRatio || 4/3);
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+  };
 
   useEffect(() => {
     const img = new Image();
@@ -40,7 +44,12 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
       if (enableBackgroundExtension && !isThumbnail) {
         try {
           const colors = await extractDominantColors(img);
-          setBackgroundColors(colors);
+          if (colors && colors.length >= 2) {
+            setBackgroundColors({
+              dominant: colors[0],
+              secondary: colors[1]
+            });
+          }
         } catch (error) {
           console.warn('Failed to extract colors:', error);
         }
@@ -52,51 +61,35 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
     img.src = src;
   }, [src, enableBackgroundExtension, isThumbnail]);
 
-  const containerStyle = isThumbnail ? {} : {
-    aspectRatio: calculatedAspectRatio.toString(),
-    minHeight: '200px', // Prevent layout shifts
-    background: enableBackgroundExtension && backgroundColors.length > 0 
-      ? `linear-gradient(135deg, ${backgroundColors[0]}, ${backgroundColors[1] || backgroundColors[0]})`
-      : 'hsl(var(--background))'
+  // Mobile-optimized container style - transparent background to prevent black frames
+  const containerStyle = {
+    aspectRatio: `${calculatedAspectRatio}`,
+    background: enableBackgroundExtension && backgroundColors.dominant && !isThumbnail 
+      ? `linear-gradient(135deg, ${backgroundColors.dominant}, ${backgroundColors.secondary})` 
+      : 'transparent'
   };
 
   return (
     <div 
-      className={`relative overflow-hidden rounded-lg ${className}`}
+      className={`relative bg-transparent ${className}`} 
       style={containerStyle}
-      onClick={onClick}
     >
-      {/* Background blur effect - only for non-thumbnails */}
-      {enableBackgroundExtension && backgroundColors.length > 0 && !isThumbnail && (
-        <div 
-          className="absolute inset-0 opacity-30 blur-md scale-110"
-          style={{
-            background: `linear-gradient(135deg, ${backgroundColors[0]}, ${backgroundColors[1] || backgroundColors[0]})`
-          }}
-        />
-      )}
-      
-      {/* Main image */}
       <img
         ref={imgRef}
         src={src}
         alt={alt}
-        className={`relative z-10 w-full h-full ${
-          isThumbnail ? 'object-cover' : 'object-contain'
-        } transition-all duration-500 ease-out ${
-          imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-        }`}
-        onLoad={() => setImageLoaded(true)}
+        onClick={onClick}
+        className={`w-full h-auto object-contain bg-transparent transition-opacity duration-300 ${
+          imageLoaded ? 'opacity-100' : 'opacity-0'
+        } ${onClick ? 'cursor-pointer' : ''}`}
+        onLoad={handleImageLoad}
       />
       
-      {/* Loading placeholder */}
       {!imageLoaded && (
-        <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
-        </div>
+        <div className="absolute inset-0 bg-transparent animate-pulse rounded" />
       )}
       
-      <canvas ref={canvasRef} className="hidden" />
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
     </div>
   );
 };

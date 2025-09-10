@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 export interface Friendship {
   id: string;
@@ -8,9 +10,11 @@ export interface Friendship {
   status: 'pending' | 'accepted' | 'blocked';
   created_at: string;
   updated_at: string;
-  profiles?: {
+  friend_profile?: {
     display_name: string | null;
     avatar_url: string | null;
+    user_id: string;
+    photo_score: number;
   };
 }
 
@@ -32,57 +36,66 @@ export interface FriendRequest {
 }
 
 export const useFriends = () => {
-  const query = useQuery({
+  const queryClient = useQueryClient();
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('friends-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friendships'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['friends'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'friend_requests'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return useQuery({
     queryKey: ['friends'],
     queryFn: async () => {
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData?.user;
-      if (!user?.id) throw new Error('Not authenticated');
-
-      // Query friendships where current user is either user_id or friend_id
+      // Use the new RPC function for better performance
       const { data, error } = await supabase
-        .from('friendships')
-        .select(`
-          *,
-          user_profile:profiles!user_id(display_name, avatar_url, user_id),
-          friend_profile:profiles!friend_id(display_name, avatar_url, user_id)
-        `)
-        .eq('status', 'accepted')
-        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
+        .rpc('rpc_friend_list');
 
       if (error) throw error;
 
-      // Process friendships to get the correct friend info and scores
-      const friendsWithScores = await Promise.all(
-        (data || []).map(async (friendship) => {
-          // Determine who is the friend (not the current user)
-          const isUserIdCurrentUser = friendship.user_id === user.id;
-          const friendId = isUserIdCurrentUser ? friendship.friend_id : friendship.user_id;
-          const friendProfile = isUserIdCurrentUser ? friendship.friend_profile : friendship.user_profile;
-          
-          const { data: photoScore } = await supabase
-            .rpc('get_user_photo_score', { user_uuid: friendId });
-          
-          return {
-            ...friendship,
-            friend_id: friendId,
-            friend_profile: friendProfile ? {
-              ...(friendProfile as any),
-              photo_score: photoScore || 0
-            } : null
-          };
-        })
-      );
-
-      return friendsWithScores;
+      return (data || []).map((friend: any) => ({
+        friend_id: friend.friend_id,
+        friend_profile: {
+          user_id: friend.friend_id,
+          display_name: friend.display_name,
+          avatar_url: friend.avatar_url,
+          photo_score: friend.photo_score || 0
+        },
+        created_at: friend.friendship_created_at
+      }));
     },
   });
-  
-  return query || { data: undefined, isLoading: false, error: null };
 };
 
 export const useFriendRequests = () => {
-  const query = useQuery({
+  return useQuery({
     queryKey: ['friend-requests'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -104,8 +117,6 @@ export const useFriendRequests = () => {
       return data;
     },
   });
-  
-  return query || { data: undefined, isLoading: false, error: null };
 };
 
 export const useSendFriendRequest = () => {
@@ -113,26 +124,21 @@ export const useSendFriendRequest = () => {
 
   return useMutation({
     mutationFn: async (receiverId: string) => {
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData?.user;
-      if (!user?.id) throw new Error('Not authenticated');
-
       const { data, error } = await supabase
-        .from('friend_requests')
-        .insert([
-          {
-            sender_id: user.id,
-            receiver_id: receiverId,
-          }
-        ])
-        .select()
-        .single();
+        .rpc('rpc_friend_request_create', {
+          receiver_uuid: receiverId
+        });
 
       if (error) throw error;
+      if (!(data as any).success) throw new Error((data as any).error);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+      toast.success('好友请求已发送');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || '发送好友请求失败');
     },
   });
 };
@@ -142,42 +148,23 @@ export const useAcceptFriendRequest = () => {
 
   return useMutation({
     mutationFn: async (requestId: string) => {
-      // Get the friend request details
-      const { data: request, error: requestError } = await supabase
-        .from('friend_requests')
-        .select('sender_id, receiver_id')
-        .eq('id', requestId)
-        .single();
+      const { data, error } = await supabase
+        .rpc('rpc_friend_request_respond', {
+          request_uuid: requestId,
+          action: 'accept'
+        });
 
-      if (requestError) throw requestError;
-
-      // Create friendship
-      const { error: friendshipError } = await supabase
-        .from('friendships')
-        .insert([
-          {
-            user_id: request.receiver_id,
-            friend_id: request.sender_id,
-          },
-          {
-            user_id: request.sender_id,
-            friend_id: request.receiver_id,
-          }
-        ]);
-
-      if (friendshipError) throw friendshipError;
-
-      // Update request status
-      const { error: updateError } = await supabase
-        .from('friend_requests')
-        .update({ status: 'accepted' })
-        .eq('id', requestId);
-
-      if (updateError) throw updateError;
+      if (error) throw error;
+      if (!(data as any).success) throw new Error((data as any).error);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friends'] });
       queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+      toast.success('好友请求已接受');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || '接受好友请求失败');
     },
   });
 };
@@ -187,15 +174,22 @@ export const useRejectFriendRequest = () => {
 
   return useMutation({
     mutationFn: async (requestId: string) => {
-      const { error } = await supabase
-        .from('friend_requests')
-        .update({ status: 'rejected' })
-        .eq('id', requestId);
+      const { data, error } = await supabase
+        .rpc('rpc_friend_request_respond', {
+          request_uuid: requestId,
+          action: 'reject'
+        });
 
       if (error) throw error;
+      if (!(data as any).success) throw new Error((data as any).error);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+      toast.success('好友请求已拒绝');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || '拒绝好友请求失败');
     },
   });
 };
@@ -205,19 +199,21 @@ export const useRemoveFriend = () => {
 
   return useMutation({
     mutationFn: async (friendId: string) => {
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData?.user;
-      if (!user?.id) throw new Error('Not authenticated');
-
-      const { error } = await supabase
-        .from('friendships')
-        .delete()
-        .or(`and(user_id.eq.${user.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${user.id})`);
+      const { data, error } = await supabase
+        .rpc('rpc_friend_remove', {
+          friend_uuid: friendId
+        });
 
       if (error) throw error;
+      if (!(data as any).success) throw new Error((data as any).error);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friends'] });
+      toast.success('好友已移除');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || '移除好友失败');
     },
   });
 };

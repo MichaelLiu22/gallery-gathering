@@ -29,7 +29,7 @@ export const useUploadPhoto = () => {
       const user = authResult.data.user;
 
       // Upload all files using safe upload function
-      const imageUrls = await safeUploadMultiple(data.files);
+      const { originalUrls, thumbnailUrls, originalPaths } = await safeUploadMultiple(data.files);
 
       // Insert photo record with image array
       const insertResult = await supabase
@@ -37,8 +37,8 @@ export const useUploadPhoto = () => {
         .insert({
           title: data.title,
           description: data.description,
-          image_url: imageUrls[0], // Keep the first image for backward compatibility
-          image_urls: imageUrls, // New field for gallery support
+          image_url: thumbnailUrls[0], // Use thumbnail for backward compatibility
+          image_urls: thumbnailUrls, // Store thumbnail URLs for gallery
           camera_equipment: data.camera_equipment,
           exposure_settings: data.exposure_settings,
           visibility: data.visibility,
