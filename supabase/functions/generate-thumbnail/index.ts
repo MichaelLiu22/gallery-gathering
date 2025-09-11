@@ -69,20 +69,21 @@ serve(async (req) => {
       );
     }
 
-    // Generate signed URLs
+    // Generate public URLs (thumbnails bucket is now public)
     const { data: originalSignedUrl } = await supabase.storage
       .from('originals')
-      .createSignedUrl(originalPath, 3600); // 1 hour
+      .createSignedUrl(originalPath, 3600); // 1 hour for originals
 
-    const { data: thumbnailSignedUrl } = await supabase.storage
+    // Generate public URL for thumbnail since bucket is public
+    const { data: thumbnailPublicUrl } = await supabase.storage
       .from('thumbnails')
-      .createSignedUrl(thumbnailPath, 3600); // 1 hour
+      .getPublicUrl(thumbnailPath);
 
     return new Response(
       JSON.stringify({
         success: true,
         originalUrl: originalSignedUrl?.signedUrl,
-        thumbnailUrl: thumbnailSignedUrl?.signedUrl,
+        thumbnailUrl: thumbnailPublicUrl?.publicUrl,
         thumbnailPath
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
