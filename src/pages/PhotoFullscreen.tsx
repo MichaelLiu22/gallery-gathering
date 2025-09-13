@@ -93,7 +93,7 @@ export default function PhotoFullscreen() {
   // 如果没有图片源，显示错误
   if (!src) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">图片未找到</h1>
           <Button onClick={() => window.close()}>关闭窗口</Button>
@@ -103,7 +103,7 @@ export default function PhotoFullscreen() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* 顶部工具栏 */}
       <div className="flex items-center justify-between p-4 bg-card/50 backdrop-blur-sm border-b">
         <h1 className="text-lg font-medium truncate max-w-md">{alt}</h1>

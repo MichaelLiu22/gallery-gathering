@@ -216,7 +216,7 @@ export default function PhotoView() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">加载作品中...</p>
@@ -227,7 +227,7 @@ export default function PhotoView() {
 
   if (!photo) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-2">作品不存在</h2>
           <Button onClick={() => navigate('/')}>返回首页</Button>
@@ -242,7 +242,7 @@ export default function PhotoView() {
   const currentImage = imageUrls[currentImageIndex];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <div className="container mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
